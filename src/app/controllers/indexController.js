@@ -1,17 +1,13 @@
 const {pool} = require('../../../config/database');
 const {logger} = require('../../../config/winston');
 
+const indexDao = require('../dao/indexDao');
+
 exports.default = async function (req, res) {
     try {
         const connection = await pool.getConnection(async conn => conn);
         try {
-            const [rows] = await connection.query(
-                `
-                SELECT id, email, nickname, createdAt, updatedAt 
-                FROM UserInfo
-                `
-            );
-            connection.release();
+            const [rows] = await indexDao.defaultDao();
             return res.json(rows);
         } catch (err) {
             logger.error(`example non transaction Query error\n: ${JSON.stringify(err)}`);
