@@ -1,7 +1,7 @@
 const { pool } = require("../../../config/database");
 
 // index
-async function defaulDao() {
+async function defaultDao() {
   const connection = await pool.getConnection(async (conn) => conn);
   const selectEmailQuery = `
                     SELECT id, email, nickname, createdAt, updatedAt 
