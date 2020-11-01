@@ -181,7 +181,7 @@ exports.login = async function(req, res) {
     const { email, pwd } = req.body;
 
     if (!email)
-        return res.json({
+        return res.status(400).json({
             isSuccess: false,
             code: 4,
             message:
@@ -189,7 +189,7 @@ exports.login = async function(req, res) {
         });
 
     if (email.length >= 30 || !regexEmail.test(email))
-        return res.json({
+        return res.status(400).json({
             isSuccess: false,
             code: 6,
             message:
@@ -197,7 +197,7 @@ exports.login = async function(req, res) {
         });
 
     if (!pwd)
-        return res.json({
+        return res.status(400).json({
             isSuccess: false,
             code: 5,
             message:
@@ -205,7 +205,7 @@ exports.login = async function(req, res) {
         });
 
     if (pwd.length < 10 || pwd.length >= 20)
-        return res.json({
+        return res.status(400).json({
             isSuccess: false,
             code: 7,
             message:
@@ -219,7 +219,7 @@ exports.login = async function(req, res) {
             const userInfoRow = await userDao.selectUserInfo(email, connection);
 
             if (userInfoRow.length < 1) {
-                return res.json({
+                return res.status(400).json({
                     isSuccess: false,
                     code: 2,
                     message: "회원 정보를 찾을 수 없습니다."
@@ -232,7 +232,7 @@ exports.login = async function(req, res) {
                 .digest("hex");
 
             if (userInfoRow[0].pwd !== hashedPassword) {
-                return res.json({
+                return res.status(400).json({
                     isSuccess: false,
                     code: 3,
                     message: "email과 password가 부합하지 않습니다."
@@ -240,7 +240,7 @@ exports.login = async function(req, res) {
             }
 
             if (userInfoRow[0].isDeleted) {
-                return res.json({
+                return res.status(400).json({
                     isSuccess: false,
                     code: 8,
                     message: "탈퇴된 계정입니다."
@@ -289,6 +289,76 @@ exports.login = async function(req, res) {
     }
 };
 
+/**
+ update : 2020.11.1
+ 03.duplicate-email api = 이메일 중복 체크 api
+ **/
+
+exports.checkEmail = async function(req, res) {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({
+            isSuccess: false,
+            code: 3,
+            message: "Body Parameter Error : 'email'이 존재하지않습니다."
+        });
+    }
+
+    if (email.length >= 30 || !regexEmail.test(email))
+        return res.status(400).json({
+            isSuccess: false,
+            code: 4,
+            message:
+                "Body Parameter Error : 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)"
+        });
+
+    try {
+        const connection = await pool.getConnection(async conn => conn);
+
+        try {
+            const existObj = await userDao.userEmailCheck(email, connection);
+
+            if (existObj.exist) {
+                return res.status(200).json({
+                    isExist: true,
+                    isSuccess: false,
+                    code: 1,
+                    message: "중복된 이메일입니다."
+                });
+            } else {
+                return res.status(200).json({
+                    isExist: false,
+                    isSuccess: true,
+                    code: 2,
+                    message: "회원가입 가능한 이메일입니다."
+                });
+            }
+        } catch (err) {
+            logger.error(
+                `App - Duplicate Email Check Query error\n: ${JSON.stringify(
+                    err
+                )}`
+            );
+            return res.status(500).json({
+                isSuccess: false,
+                code: 500,
+                message: "서버 에러 : 문의 요망"
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        logger.error(
+            `App - Email Check DB Connection error\n: ${JSON.stringify(err)}`
+        );
+        return res.status(500).json({
+            isSuccess: false,
+            code: 500,
+            message: "서버 에러 : 문의 요망"
+        });
+    }
+};
 /**
  update : 2019.09.23
  03.check API = token 검증
