@@ -359,7 +359,10 @@ exports.checkEmail = async function(req, res) {
         });
     }
 };
-
+/**
+ update : 2020.11.1
+ 04.social login api = 이메일 중복 체크 api
+ **/
 exports.socialLogin = async function(req, res) {
     const { accessToken: token } = req.body;
 
@@ -500,7 +503,7 @@ exports.socialLogin = async function(req, res) {
                 });
             }
         } else {
-            logger.error(`Access Token error\n: ${err}`);
+            logger.error(`Access Token error\n: ${error}`);
             return res.status(400).json({
                 isSuccess: false,
                 code: 2,
