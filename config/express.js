@@ -21,7 +21,7 @@ module.exports = function() {
     require("../src/app/routes/userRoute")(app);
 
     /* test 시에만*/
-    /*require("../src/app/routes/clientTest")(app);*/
+    require("../src/app/routes/test")(app);
 
     /* Web */
     // require('../src/web/routes/indexRoute')(app);
