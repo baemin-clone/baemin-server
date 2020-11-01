@@ -359,6 +359,158 @@ exports.checkEmail = async function(req, res) {
         });
     }
 };
+
+exports.socialLogin = async function(req, res) {
+    const { accessToken: token } = req.body;
+
+    if (!token) {
+        return res.status(400).json({
+            isSuccess: false,
+            code: 3,
+            message: "Body Parameter Error: AccessToken을 입력해주세요."
+        });
+    }
+
+    var header = "Bearer " + token; // Bearer 다음에 공백 추가
+
+    var api_url = "https://openapi.naver.com/v1/nid/me";
+    var request = require("request");
+    var options = {
+        url: api_url,
+        headers: { Authorization: header }
+    };
+
+    request.get(options, async function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            const { email, nickname, birthday: birth } = JSON.parse(
+                body
+            ).response;
+
+            if (!email)
+                return res.status(400).json({
+                    isSuccess: false,
+                    code: 4,
+                    message:
+                        "Body Parameter Error : 파라미터 'email'이 존재하지 않습니다."
+                });
+
+            if (!nickname) {
+                return res.status(400).json({
+                    isSuccess: false,
+                    code: 5,
+                    message:
+                        "Body Parameter Error : 파라미터 'nickname'이 존재하지 않습니다."
+                });
+            }
+
+            if (email.length >= 30 || !regexEmail.test(email))
+                return res.status(400).json({
+                    isSuccess: false,
+                    code: 6,
+                    message:
+                        "Body Parameter Error : 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)"
+                });
+
+            if (nickname.length < 2 || nickname.length >= 10) {
+                return res.status(400).json({
+                    isSuccess: false,
+                    code: 7,
+                    message:
+                        "Body Parameter Error : 'nickname' 형식이 잘못되었습니다. (2자 이상 10자 미만)"
+                });
+            }
+
+            try {
+                const connection = await pool.getConnection(async conn => conn);
+                try {
+                    const existObj = await userDao.userEmailCheck(
+                        email,
+                        connection
+                    );
+
+                    connection.beginTransaction();
+
+                    if (!existObj.exist) {
+                        const insertUserInfoParams = [
+                            email,
+                            null,
+                            nickname,
+                            birth || null
+                        ];
+
+                        const insertUserInfoRows = await userDao.insertUserInfo(
+                            insertUserInfoParams,
+                            connection
+                        );
+                    }
+
+                    const userInfoRows = await userDao.selectUserInfo(
+                        email,
+                        connection
+                    );
+
+                    if (userInfoRows < 1) {
+                        return res.status(500).json({
+                            isSuccess: false,
+                            code: 500,
+                            message: "회원가입 실패 : 서버 문의"
+                        });
+                    }
+
+                    const { idx, email: dbEmail } = userInfoRows[0];
+
+                    const jwtToken = await jwt.sign(
+                        {
+                            idx: idx
+                        }, // 토큰의 내용(payload)
+                        secret_config.jwtsecret, // 비밀 키
+                        {
+                            expiresIn: "365d",
+                            subject: "userInfo"
+                        } // 유효 시간은 365일
+                    );
+                    connection.commit();
+
+                    return res.status(200).json({
+                        result: {
+                            jwt: jwtToken,
+                            email: dbEmail
+                        },
+                        isSuccess: true,
+                        code: 1,
+                        message: "네이버 로그인 성공"
+                    });
+                } catch (err) {
+                    logger.error(`Naver login Api Error\n : ${err}`);
+                    connection.rollback();
+                    return res.status(500).json({
+                        isSuccess: false,
+                        code: 500,
+                        message: "서버 에러 : 문의 요망"
+                    });
+                } finally {
+                    connection.release();
+                }
+            } catch (err) {
+                logger.error(`Naver Api DB Connection Error\n : ${err}`);
+                return res.status(500).json({
+                    isSuccess: false,
+                    code: 500,
+                    message: "서버 에러 : 문의 요망"
+                });
+            }
+        } else {
+            logger.error(`Access Token error\n: ${err}`);
+            return res.status(400).json({
+                isSuccess: false,
+                code: 2,
+                message:
+                    "AccessToken이 유효하지않습니다. (네이버 서버에서 정보를 가져오지 못함)"
+            });
+        }
+    });
+};
+
 /**
  update : 2019.09.23
  03.check API = token 검증

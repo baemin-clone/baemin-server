@@ -5,7 +5,7 @@ module.exports = function(app) {
     app.route("/signup").post(user.signUp);
     app.route("/login").post(user.login);
     app.route("/duplicate-email").post(user.checkEmail);
-    // app.route('/app/signIn').post(user.signIn);
+    app.route("/naver-login").post(user.socialLogin);
 
     app.get("/check", jwtMiddleware, user.check);
 };

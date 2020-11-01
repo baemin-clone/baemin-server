@@ -14,29 +14,12 @@ async function userEmailCheck(email, connection) {
     return existRow[0];
 }
 
-async function userNicknameCheck(nickname) {
-    const connection = await pool.getConnection(async conn => conn);
-    const selectNicknameQuery = `
-                SELECT email, nickname 
-                FROM UserInfo 
-                WHERE nickname = ?;
-                `;
-    const selectNicknameParams = [nickname];
-    const [nicknameRows] = await connection.query(
-        selectNicknameQuery,
-        selectNicknameParams
-    );
-    connection.release();
-    return nicknameRows;
-}
-
 async function insertUserInfo(insertUserInfoParams, connection) {
     const insertUserInfoQuery = `INSERT INTO user(email, pwd, nickname, birth) VALUES (?, ?, ?, ?);`;
     const [insertUserInfoRow] = await connection.query(
         insertUserInfoQuery,
         insertUserInfoParams
     );
-    console.log(insertUserInfoRow);
 
     return insertUserInfoRow;
 }
@@ -67,7 +50,6 @@ async function selectUserInfoByIdx(idx, connection) {
 
 module.exports = {
     userEmailCheck,
-    userNicknameCheck,
     insertUserInfo,
     selectUserInfo,
     selectUserInfoByIdx
