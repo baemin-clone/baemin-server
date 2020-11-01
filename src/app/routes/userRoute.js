@@ -8,4 +8,6 @@ module.exports = function(app) {
     app.route("/naver-login").post(user.socialLogin);
 
     app.get("/check", jwtMiddleware, user.check);
+
+    /** client test code  */
 };
