@@ -6,4 +6,6 @@ module.exports = function(app) {
     app.route("/my-address")
         .post(location.addUserLocation)
         .get(location.getUserLocation);
+
+    app.route("/current-address").get(location.getCurrentAddress);
 };

@@ -19,7 +19,7 @@ module.exports = function() {
     /* App (Android, iOS) */
     require("../src/app/routes/indexRoute")(app);
     require("../src/app/routes/userRoute")(app);
-    require("../src/app/routes/locationRouter")(app);
+    require("../src/app/routes/locationRoute")(app);
 
     /* test 시에만*/
     require("../src/app/routes/test")(app);

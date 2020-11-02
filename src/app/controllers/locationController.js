@@ -182,3 +182,51 @@ exports.getUserLocation = async function(req, res) {
         });
     }
 };
+
+exports.getCurrentAddress = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+
+    try {
+        const connection = await pool.getConnection(async conn => conn);
+
+        try {
+            const currentAddressRow = await locationDao.selectUserLocation(
+                [userIdx, 0, 1],
+                connection
+            );
+
+            if (currentAddressRow.length < 1) {
+                return res.status(400).json({
+                    isSuccess: false,
+                    code: 3,
+                    message: "현재 주소가 존재하지 않습니다."
+                });
+            }
+
+            res.status(200).json({
+                currentAddress: currentAddressRow[0].address,
+                isSuccess: true,
+                code: 1,
+                message: "현재 주소 조회 성공"
+            });
+        } catch (err) {
+            logger.error(`Add Location API Error\n : ${err.message}`);
+
+            return res.status(500).json({
+                isSuccess: false,
+                code: 500,
+                message: "서버 에러 : 문의 요망"
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        logger.error(`Add Location DB Connection Error\n : ${err.message}`);
+
+        return res.status(500).json({
+            isSuccess: false,
+            code: 500,
+            message: "서버 에러 : 문의 요망"
+        });
+    }
+};
