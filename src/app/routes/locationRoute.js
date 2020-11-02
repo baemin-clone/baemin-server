@@ -7,5 +7,6 @@ module.exports = function(app) {
         .post(location.addUserLocation)
         .get(location.getUserLocation);
 
+    app.route("/my-address/:idx").delete(location.deleteUserLocation);
     app.route("/current-address").get(location.getCurrentAddress);
 };

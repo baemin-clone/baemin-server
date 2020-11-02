@@ -109,6 +109,10 @@ exports.addUserLocation = async function(req, res) {
     }
 };
 
+/**
+ update : 2020.11.2
+ 07.get user locations API = 유저 주소 목록 조회 api
+ */
 exports.getUserLocation = async function(req, res) {
     let page = req.query.page;
     let size = req.query.size;
@@ -183,6 +187,76 @@ exports.getUserLocation = async function(req, res) {
     }
 };
 
+/**
+ update : 2020.11.2
+ 17.delete user location API = 유저 현재 주소 삭제 api
+ */
+exports.deleteUserLocation = async function(req, res) {
+    const { idx } = req.params;
+    const userIdx = req.verifiedToken.idx;
+    if (idx && isNaN(idx)) {
+        return res.status(400).json({
+            isSuccess: false,
+            code: 3,
+            message: "Path Parameter Error : 'idx' 형식이 잘못되었습니다."
+        });
+    }
+
+    try {
+        const connection = await pool.getConnection(async conn => conn);
+
+        try {
+            const params = [idx, userIdx];
+            const isExistLocation = await locationDao.isExistLocation(
+                params,
+                connection
+            );
+
+            if (!isExistLocation) {
+                return res.status(200).json({
+                    isSuccess: true,
+                    code: 3,
+                    message: "이미 존재하지않는 위치입니다."
+                });
+            }
+
+            const deleteLocationRow = await locationDao.deleteUserLocation(
+                params,
+                connection
+            );
+
+            return res.status(200).json({
+                locationIdx: parseInt(idx),
+                isSuccess: true,
+                code: 1,
+                message: "사용자 위치 삭제 성공"
+            });
+        } catch (err) {
+            logger.error(`Add Location API Error\n : ${err.message}`);
+
+            return res.status(500).json({
+                isSuccess: false,
+                code: 500,
+                message: "서버 에러 : 문의 요망"
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        logger.error(`Add Location DB Connection Error\n : ${err.message}`);
+
+        return res.status(500).json({
+            isSuccess: false,
+            code: 500,
+            message: "서버 에러 : 문의 요망"
+        });
+    }
+};
+
+/**
+ update : 2020.11.2
+ 05.get user current location API = 유저 현재 주소 조회 api
+ */
 exports.getCurrentAddress = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
 

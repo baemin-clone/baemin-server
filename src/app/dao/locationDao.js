@@ -8,7 +8,7 @@ async function insertUserLocation(params, connection) {
 }
 
 async function selectUserLocation(params, connection) {
-    const query = `SELECT address, IFNULL(roadAddress, "") as roadAddress
+    const query = `SELECT idx, address, IFNULL(roadAddress, "") as roadAddress
     FROM userLocation
     WHERE user_fk = ? AND isDeleted = FALSE
     ORDER BY modifiedAt DESC
@@ -18,7 +18,27 @@ async function selectUserLocation(params, connection) {
 
     return rows;
 }
+
+async function isExistLocation(params, connection) {
+    const query = `
+    SELECT EXISTS(SELECT isDeleted FROM userLocation WHERE idx =? AND user_fk = ? AND isDeleted = FALSE) as exist;
+    `;
+
+    const [isExistRow] = await connection.query(query, params);
+
+    return isExistRow[0].exist;
+}
+
+async function deleteUserLocation(params, connection) {
+    const query = `update userLocation SET isDeleted=true where idx=? AND user_fk=?;`;
+
+    const [row] = await connection.query(query, params);
+
+    return row;
+}
 module.exports = {
     insertUserLocation,
-    selectUserLocation
+    selectUserLocation,
+    isExistLocation,
+    deleteUserLocation
 };
