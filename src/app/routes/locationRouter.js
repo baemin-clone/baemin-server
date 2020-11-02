@@ -3,5 +3,7 @@ module.exports = function(app) {
     const jwtMiddleware = require("../../../config/jwtMiddleware");
 
     app.use(jwtMiddleware);
-    app.route("/my-address").post(location.addLocation);
+    app.route("/my-address")
+        .post(location.addUserLocation)
+        .get(location.getUserLocation);
 };
