@@ -11,6 +11,8 @@ const func = require("./function");
 const userDao = require("../dao/userDao");
 const { constants } = require("buffer");
 
+const changeObj = require("../../../modules/utils").responseObj;
+const tryCatch = require("../../../modules/utils").connectionFunc;
 /**
  update : 2020.11.1
  02.signUp API = 회원가입
@@ -269,7 +271,7 @@ exports.login = async function(req, res) {
                 message: "로그인 성공"
             });
         } catch (err) {
-            logger.error(`App - SignIn Query error\n: ${JSON.stringify(err)}`);
+            logger.error(`App - Login Query error\n: ${JSON.stringify(err)}`);
             return res.status(500).json({
                 isSuccess: false,
                 code: 500,
@@ -280,7 +282,7 @@ exports.login = async function(req, res) {
         }
     } catch (err) {
         logger.error(
-            `App - SignIn DB Connection error\n: ${JSON.stringify(err)}`
+            `App - Login DB Connection error\n: ${JSON.stringify(err)}`
         );
         return res.status(500).json({
             isSuccess: false,
@@ -621,7 +623,7 @@ exports.addUserInfo = async function(req, res) {
                         message: "네이버 로그인 성공"
                     });
                 } catch (err) {
-                    logger.error(`Naver login Api Error\n : ${err}`);
+                    logger.error(`Add UserInfo Api Error\n : ${err}`);
                     connection.rollback();
                     return res.status(500).json({
                         isSuccess: false,
@@ -632,7 +634,7 @@ exports.addUserInfo = async function(req, res) {
                     connection.release();
                 }
             } catch (err) {
-                logger.error(`Naver Api DB Connection Error\n : ${err}`);
+                logger.error(`Add UserInfo Api DB Connection Error\n : ${err}`);
                 return res.status(500).json({
                     isSuccess: false,
                     code: 500,
@@ -649,6 +651,72 @@ exports.addUserInfo = async function(req, res) {
             });
         }
     });
+};
+
+/**
+ * update : 2020.11.4
+ * 19. Delete User api : 유저 삭제 api
+ */
+exports.deleteUser = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+
+    await tryCatch(`Delete User API`, async connection => {
+        const isExist = await userDao.isExistUserByIdx(userIdx, connection);
+
+        if (!isExist) {
+            return res.status(200).json({
+                userIdx: userIdx,
+                ...changeObj(true, 2, "이미 존재하지않는 유저입니다.")
+            });
+        }
+
+        await userDao.deleteUser(userIdx, connection);
+
+        return res.status(200).json({
+            userIdx: userIdx,
+            ...changeObj(true, 2, "유저 삭제 완료")
+        });
+    });
+
+    // try {
+    //     const connection = await pool.getConnection(async conn => conn);
+
+    //     try {
+    //         const isExist = await userDao.isExistUserByIdx(userIdx, connection);
+
+    //         if (!isExist) {
+    //             return res.status(200).json({
+    //                 userIdx: userIdx,
+    //                 ...changeObj(true, 2, "이미 존재하지않는 유저입니다.")
+    //             });
+    //         }
+
+    //         await userDao.deleteUser(userIdx, connection);
+
+    //         return res.status(200).json({
+    //             userIdx: userIdx,
+    //             ...changeObj(true, 2, "유저 삭제 완료")
+    //         });
+    //     } catch (err) {
+    //         logger.error(
+    //             `App - Delete User DB Connection error\n: ${err.message}`
+    //         );
+    //         return res.status(500).json({
+    //             isSuccess: false,
+    //             code: 500,
+    //             message: "서버 에러 : 문의 요망"
+    //         });
+    //     } finally {
+    //         connection.release();
+    //     }
+    // } catch (err) {
+    //     logger.error(`App - Delete User DB Connection error\n: ${err.message}`);
+    //     return res.status(500).json({
+    //         isSuccess: false,
+    //         code: 500,
+    //         message: "서버 에러 : 문의 요망"
+    //     });
+    // }
 };
 
 /**
