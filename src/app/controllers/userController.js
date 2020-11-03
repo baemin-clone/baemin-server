@@ -570,6 +570,19 @@ exports.addUserInfo = async function(req, res) {
                 const connection = await pool.getConnection(async conn => conn);
                 try {
                     await connection.beginTransaction();
+
+                    const existObj = await userDao.userEmailCheck(
+                        email,
+                        connection
+                    );
+
+                    if (existObj.exist) {
+                        return res.status(400).json({
+                            isSuccess: false,
+                            code: 7,
+                            message: "이미 존재하는 계정입니다."
+                        });
+                    }
                     const insertUserInfoParams = [email, null, nickname, birth];
 
                     const insertUserInfoRows = await userDao.insertUserInfo(
