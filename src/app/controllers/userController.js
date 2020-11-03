@@ -406,25 +406,15 @@ exports.socialLogin = async function(req, res) {
             try {
                 const connection = await pool.getConnection(async conn => conn);
                 try {
-                    connection.beginTransaction();
-
                     const existObj = await userDao.userEmailCheck(
                         email,
                         connection
                     );
 
                     if (!existObj.exist) {
-                        const insertUserInfoParams = [email, null, null, null];
-
-                        const insertUserInfoRows = await userDao.insertUserInfo(
-                            insertUserInfoParams,
-                            connection
-                        );
-
-                        connection.commit();
-                        return res.status(200).json({
-                            isSuccess: true,
-                            code: 200,
+                        return res.status(400).json({
+                            isSuccess: false,
+                            code: 8,
                             message:
                                 "회원가입을 위해 추가 정보를 입력해주세요. (nickname, birth)"
                         });
@@ -439,18 +429,7 @@ exports.socialLogin = async function(req, res) {
                         return res.status(500).json({
                             isSuccess: false,
                             code: 500,
-                            message: "회원가입 실패 : 서버 문의"
-                        });
-                    }
-
-                    if (
-                        func.isNull(userInfoRows[0].nickname) ||
-                        func.isNull(userInfoRows[0].birth)
-                    ) {
-                        return res.status(400).json({
-                            isSuccess: true,
-                            code: 8,
-                            message: "추가정보를 입력해주세요."
+                            message: "로그인 실패 : 서버 문의"
                         });
                     }
 
@@ -466,7 +445,6 @@ exports.socialLogin = async function(req, res) {
                             subject: "userInfo"
                         } // 유효 시간은 365일
                     );
-                    connection.commit();
 
                     return res.status(200).json({
                         result: {
@@ -591,29 +569,18 @@ exports.addUserInfo = async function(req, res) {
             try {
                 const connection = await pool.getConnection(async conn => conn);
                 try {
-                    connection.beginTransaction();
+                    await connection.beginTransaction();
+                    const insertUserInfoParams = [email, null, nickname, birth];
+
+                    const insertUserInfoRows = await userDao.insertUserInfo(
+                        insertUserInfoParams,
+                        connection
+                    );
 
                     const userInfoRows = await userDao.selectUserInfo(
                         email,
                         connection
                     );
-
-                    if (userInfoRows < 1) {
-                        return res.status(500).json({
-                            isSuccess: false,
-                            code: 500,
-                            message:
-                                "추가 정보 입력 이전에 회원가입을 진행해주세요"
-                        });
-                    }
-
-                    const addUserInfoParams = [
-                        nickname,
-                        birth,
-                        userInfoRows[0].email
-                    ];
-
-                    await userDao.updateUserInfo(addUserInfoParams, connection);
 
                     const { idx, email: dbEmail } = userInfoRows[0];
 
@@ -627,8 +594,8 @@ exports.addUserInfo = async function(req, res) {
                             subject: "userInfo"
                         } // 유효 시간은 365일
                     );
-                    connection.commit();
 
+                    await connection.commit();
                     return res.status(200).json({
                         result: {
                             nickname,
