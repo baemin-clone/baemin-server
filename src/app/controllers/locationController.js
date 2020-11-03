@@ -189,7 +189,7 @@ exports.getUserLocation = async function(req, res) {
 
 /**
  update : 2020.11.2
- 17.delete user location API = 유저 현재 주소 삭제 api
+ 17.delete user location API = 유저 주소 삭제 api
  */
 exports.deleteUserLocation = async function(req, res) {
     const { idx } = req.params;

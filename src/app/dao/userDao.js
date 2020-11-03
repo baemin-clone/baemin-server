@@ -26,7 +26,7 @@ async function insertUserInfo(insertUserInfoParams, connection) {
 
 //SignIn
 async function selectUserInfo(email, connection) {
-    const selectUserInfoQuery = `SELECT idx, email, isDeleted, pwd FROM user WHERE email = ?;`;
+    const selectUserInfoQuery = `SELECT idx, email, isDeleted, pwd, nickname, birth FROM user WHERE email = ?;`;
 
     const selectUserInfoParams = [email];
     const [userInfoRows] = await connection.query(
@@ -48,9 +48,15 @@ async function selectUserInfoByIdx(idx, connection) {
     return userInfoRows[0];
 }
 
+async function updateUserInfo(params, connection) {
+    const query = `update user SET nickname = ? , birth = ? where email= ?;`;
+    const [updateUser] = await connection.query(query, params);
+}
+
 module.exports = {
     userEmailCheck,
     insertUserInfo,
     selectUserInfo,
-    selectUserInfoByIdx
+    selectUserInfoByIdx,
+    updateUserInfo
 };
