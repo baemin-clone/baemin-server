@@ -46,8 +46,8 @@ exports.signUp = async function(req, res) {
         return res.status(400).json(
             {
                 result: {
-                    email: "",
-                    jwt: ""
+                    email: "email",
+                    jwt: "jwt"
                 },
                 isSuccess: false,
                 code: 1,
