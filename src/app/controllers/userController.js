@@ -29,7 +29,8 @@ exports.signUp = async function(req, res) {
     };
 
     if (!email)
-        return res.status(400).json(
+        return res.status(200).json(
+            //응답 test 용
             {
                 result: {},
                 isSuccess: false,
@@ -43,7 +44,8 @@ exports.signUp = async function(req, res) {
         );
 
     if (!pwd)
-        return res.status(400).json(
+        return res.status(200).json(
+            //응답 test 용
             {
                 result: {
                     email: "email",
