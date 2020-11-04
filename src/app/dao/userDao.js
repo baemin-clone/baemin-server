@@ -37,7 +37,7 @@ async function selectUserInfo(email, connection) {
 }
 
 async function selectUserInfoByIdx(idx, connection) {
-    const selectUserInfoQuery = `SELECT email FROM user WHERE idx = ? AND isDeleted = FALSE;`;
+    const selectUserInfoQuery = `SELECT email, nickname, birth, phone FROM user WHERE idx = ? AND isDeleted = FALSE;`;
     const selectUserInfoParams = [idx];
 
     const [userInfoRows] = await connection.query(

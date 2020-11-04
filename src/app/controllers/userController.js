@@ -652,7 +652,7 @@ exports.deleteUser = async function(req, res) {
         if (!isExist) {
             return res.json({
                 userIdx: userIdx,
-                ...changeObj(true, 2, "이미 존재하지않는 유저입니다.")
+                ...obj(true, 2, "이미 존재하지않는 유저입니다.")
             });
         }
 
@@ -660,7 +660,7 @@ exports.deleteUser = async function(req, res) {
 
         return res.json({
             userIdx: userIdx,
-            ...changeObj(true, 2, "유저 삭제 완료")
+            ...obj(true, 2, "유저 삭제 완료")
         });
     });
 
@@ -703,6 +703,35 @@ exports.deleteUser = async function(req, res) {
     //         message: "서버 에러 : 문의 요망"
     //     });
     // }
+};
+
+/**
+ * update : 2020.11.4
+ * 20. Get User Info api : 유저 정보 조회 api
+ */
+exports.getUserInfo = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+
+    await tryCatch(`Get User Info`, async connection => {
+        const isExist = await userDao.isExistUserByIdx(userIdx, connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 400, "존재하지않는 회원입니다."));
+        }
+
+        const userInfo = await userDao.selectUserInfoByIdx(userIdx, connection);
+
+        const { email, nickname, phone } = userInfo;
+
+        return res.json({
+            result: {
+                email,
+                nickname,
+                phone
+            },
+            ...obj(true, 200, "회원 정보 조회 성공")
+        });
+    });
 };
 
 /**
