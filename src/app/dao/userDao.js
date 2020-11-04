@@ -65,6 +65,18 @@ async function deleteUser(idx, connection) {
 
     await connection.query(query, [idx]);
 }
+
+async function updateUserNickname(params, connection) {
+    const query = `UPDATE user SET nickname = ? WHERE idx =? AND isDeleted = FALSE;
+    `;
+    await connection.query(query, params);
+}
+
+async function updateUserPwd(params, connection) {
+    const query = `UPDATE user SET pwd = ? WHERE idx = ? AND isDeleted = FALSE;
+    `;
+    await connection.query(query, params);
+}
 module.exports = {
     userEmailCheck,
     insertUserInfo,
@@ -72,5 +84,7 @@ module.exports = {
     selectUserInfoByIdx,
     updateUserInfo,
     isExistUserByIdx,
-    deleteUser
+    deleteUser,
+    updateUserNickname,
+    updateUserPwd
 };

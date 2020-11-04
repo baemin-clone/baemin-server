@@ -711,7 +711,6 @@ exports.deleteUser = async function(req, res) {
  */
 exports.getUserInfo = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
-
     await tryCatch(`Get User Info`, async connection => {
         const isExist = await userDao.isExistUserByIdx(userIdx, connection);
 
@@ -732,6 +731,85 @@ exports.getUserInfo = async function(req, res) {
             ...obj(true, 200, "회원 정보 조회 성공")
         });
     });
+};
+
+/**
+ * update : 2020.11.4
+ * 09. Modify User Info api : 유저 정보 조회 api
+ */
+exports.modifyUserInfo = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+
+    const { nickname, pwd } = req.body;
+
+    if (nickname && (nickname.length < 2 || nickname.length >= 10)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                `nickname의 형식이 잘못되었습니다. (2자 이상 10자 미만)`
+            )
+        );
+    }
+
+    if (pwd && (pwd.length < 10 || pwd.length >= 20)) {
+        return res.json(
+            obj(false, 400, `pwd 형식이 잘못되었습니다.(10자 이상 20자 미만))`)
+        );
+    }
+
+    if (nickname || pwd) {
+        await tryCatch(`Modify user info nickname`, async connection => {
+            const isExist = await userDao.selectUserInfoByIdx(
+                userIdx,
+                connection
+            );
+
+            if (!isExist) {
+                return res.json(obj(false, 400, "존재하지않는 회원입니다."));
+            }
+
+            if (nickname) {
+                const nicknameParams = [nickname, userIdx];
+                await userDao.updateUserNickname(nicknameParams, connection);
+            }
+
+            if (pwd) {
+                const hashedPassword = await crypto
+                    .createHash("sha512")
+                    .update(pwd)
+                    .digest("hex");
+
+                const pwdParams = [hashedPassword, userIdx];
+
+                await userDao.updateUserPwd(pwdParams, connection);
+            }
+
+            const userInfo = await userDao.selectUserInfoByIdx(
+                userIdx,
+                connection
+            );
+
+            const { email, nickname: userNickname, phone } = userInfo;
+
+            return res.json({
+                result: {
+                    email: email,
+                    nickname: userNickname,
+                    phone: phone
+                },
+                ...obj(true, 200, "회원 정보 수정 성공")
+            });
+        });
+    } else {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error : 하나 이상의 파라미터를 넣어주세요."
+            )
+        );
+    }
 };
 
 /**

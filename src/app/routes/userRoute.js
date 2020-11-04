@@ -8,7 +8,8 @@ module.exports = function(app) {
     app.route("/naver-login").post(user.socialLogin);
     app.route("/user-info")
         .post(user.addUserInfo)
-        .get(jwtMiddleware, user.getUserInfo);
+        .get(jwtMiddleware, user.getUserInfo)
+        .patch(jwtMiddleware, user.modifyUserInfo);
     app.route("/signout").delete(jwtMiddleware, user.deleteUser);
 
     app.get("/check", jwtMiddleware, user.check);
