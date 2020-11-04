@@ -32,5 +32,10 @@
         "mocha": "^8.2.0",
         "should": "^13.2.3",
         "supertest": "^6.0.0"
+    },
+    "_moduleAliases": {
+        "modules": "modules",
+        "config": "config",
+        "dao": "src/app/dao"
     }
 }

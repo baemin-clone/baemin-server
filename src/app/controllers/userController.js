@@ -1,17 +1,17 @@
-const { pool } = require("../../../config/database");
-const { logger } = require("../../../config/winston");
+const { pool } = require("config/database");
+const { logger } = require("config/winston");
 
 const jwt = require("jsonwebtoken");
 const regexEmail = require("regex-email");
 const regexBirth = /\d{4}\.\d{2}\.\d{2}/;
 const crypto = require("crypto");
-const secret_config = require("../../../config/secret");
+const secret_config = require("config/secret");
 
-const userDao = require("../dao/userDao");
+const userDao = require("dao/userDao");
 const { constants } = require("buffer");
 
-const changeObj = require("../../../modules/utils").responseObj;
-const tryCatch = require("../../../modules/utils").connectionFunc;
+const changeObj = require("modules/utils").responseObj;
+const tryCatch = require("modules/utils").connectionFunc;
 /**
  update : 2020.11.1
  02.signUp API = 회원가입

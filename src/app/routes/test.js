@@ -1,4 +1,4 @@
-const { pool } = require("../../../config/database");
+const { pool } = require("config/database");
 
 module.exports = function(app) {
     app.get("/users", async (req, res) => {
