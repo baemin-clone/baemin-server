@@ -7,7 +7,6 @@ const regexBirth = /\d{4}\.\d{2}\.\d{2}/;
 const crypto = require("crypto");
 const secret_config = require("../../../config/secret");
 
-const func = require("./function");
 const userDao = require("../dao/userDao");
 const { constants } = require("buffer");
 
@@ -19,73 +18,102 @@ const tryCatch = require("../../../modules/utils").connectionFunc;
  */
 exports.signUp = async function(req, res) {
     const { email, pwd, nickname, birth } = req.body;
+    const failObj = (code, message) => {
+        return {
+            result: {
+                email: null,
+                jwt: null
+            },
+            ...changeObj(false, code, message)
+        };
+    };
 
     if (!email)
-        return res.status(400).json({
-            isSuccess: false,
-            code: 3,
-            message:
-                "Body Parameter Error : 파라미터 'email'이 존재하지 않습니다."
-        });
+        return res.status(400).json(
+            {
+                result: null,
+                isSuccess: false,
+                code: 1,
+                message: "result가 null"
+            }
+            // failObj(
+            //     3,
+            //     `Body Parameter Error : 파라미터 'email'이 존재하지 않습니다.`
+            // )
+        );
 
     if (!pwd)
-        return res.status(400).json({
-            isSuccess: false,
-            code: 4,
-            message:
-                "Body Parameter Error : 파라미터 'pwd'가 존재하지 않습니다."
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    4,
+                    `Body Parameter Error : 파라미터 'pwd'가 존재하지 않습니다.`
+                )
+            );
 
     if (!nickname) {
-        return res.status(400).json({
-            isSuccess: false,
-            code: 5,
-            message:
-                "Body Parameter Error : 파라미터 'nickname'이 존재하지 않습니다."
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    5,
+                    `Body Parameter Error : 파라미터 'nickname'이 존재하지 않습니다.`
+                )
+            );
     }
 
     if (!birth) {
-        return res.status(400).json({
-            isSuccess: false,
-            code: 6,
-            message:
-                "Body Parameter Error : 파라미터 'birth'가 존재하지 않습니다."
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    6,
+                    `Body Parameter Error : 파라미터 'birth'가 존재하지 않습니다.`
+                )
+            );
     }
 
     if (email.length >= 30 || !regexEmail.test(email))
-        return res.status(400).json({
-            isSuccess: false,
-            code: 7,
-            message:
-                "Body Parameter Error : 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)"
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    7,
+                    `Body Parameter Error : 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)`
+                )
+            );
 
     if (pwd.length < 10 || pwd.length >= 20)
-        return res.status(400).json({
-            isSuccess: false,
-            code: 8,
-            message:
-                "비밀번호는 6~20자리를 Body Parameter Error : 'pwd' 형식이 잘못되었습니다. (10자 이상 20자 미만)."
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    8,
+                    `비밀번호는 6~20자리를 Body Parameter Error : 'pwd' 형식이 잘못되었습니다. (10자 이상 20자 미만).`
+                )
+            );
 
     if (nickname.length < 2 || nickname.length >= 10) {
-        return res.status(400).json({
-            isSuccess: false,
-            code: 9,
-            message:
-                "Body Parameter Error : 'nickname' 형식이 잘못되었습니다. (2자 이상 10자 미만)"
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    9,
+                    `Body Parameter Error : 'nickname' 형식이 잘못되었습니다. (2자 이상 10자 미만)`
+                )
+            );
     }
 
     if (!regexBirth.test(birth)) {
-        return res.status(400).json({
-            isSuccess: false,
-            code: 10,
-            message:
-                "Body Parameter Error : 'birth' 형식이 잘못되었습니다. (yyyy.mm.dd 형식)"
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(
+                    10,
+                    `Body Parameter Error : 'birth' 형식이 잘못되었습니다. (yyyy.mm.dd 형식)`
+                )
+            );
     }
 
     try {
@@ -96,11 +124,9 @@ exports.signUp = async function(req, res) {
             const existObj = await userDao.userEmailCheck(email, connection);
 
             if (existObj.exist) {
-                return res.status(400).json({
-                    isSuccess: false,
-                    code: 2,
-                    message: "이미 존재하는 회원입니다."
-                });
+                return res
+                    .status(400)
+                    .json(failObj(2, `이미 존재하는 회원입니다.`));
             }
 
             await connection.beginTransaction(); // START TRANSACTION
@@ -150,6 +176,10 @@ exports.signUp = async function(req, res) {
                 });
             } else {
                 return res.status(500).json({
+                    result: {
+                        email: null,
+                        jwt: null
+                    },
                     isSuccess: false,
                     code: 500,
                     message: "서버 에러 : 문의 요망"
@@ -159,6 +189,10 @@ exports.signUp = async function(req, res) {
             await connection.rollback(); // ROLLBACK
             logger.error(`App - SignUp DB Connection error\n: ${err.message}`);
             return res.status(500).json({
+                result: {
+                    email: null,
+                    jwt: null
+                },
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -169,6 +203,10 @@ exports.signUp = async function(req, res) {
     } catch (err) {
         logger.error(`App - SignUp DB Connection error\n: ${err.message}`);
         return res.status(500).json({
+            result: {
+                email: null,
+                jwt: null
+            },
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
@@ -185,34 +223,54 @@ exports.login = async function(req, res) {
 
     if (!email)
         return res.status(400).json({
-            isSuccess: false,
-            code: 4,
-            message:
-                "Body Parameter Error : 파라미터 'email'이 존재하지 않습니다."
+            result: {
+                email: null,
+                jwt: null
+            },
+            ...changeObj(
+                false,
+                4,
+                `Body Parameter Error : 파라미터 'email'이 존재하지 않습니다.`
+            )
         });
 
     if (email.length >= 30 || !regexEmail.test(email))
         return res.status(400).json({
-            isSuccess: false,
-            code: 6,
-            message:
-                "Body Parameter Error : 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현식)"
+            result: {
+                email: null,
+                jwt: null
+            },
+            ...changeObj(
+                false,
+                6,
+                `Body Parameter Error : 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현식)`
+            )
         });
 
     if (!pwd)
         return res.status(400).json({
-            isSuccess: false,
-            code: 5,
-            message:
-                "Body Parameter Error : 파라미터 'pwd'가 존재하지 않습니다."
+            result: {
+                email: null,
+                jwt: null
+            },
+            ...changeObj(
+                false,
+                5,
+                `Body Parameter Error : 파라미터 'pwd'가 존재하지 않습니다.`
+            )
         });
 
     if (pwd.length < 10 || pwd.length >= 20)
         return res.status(400).json({
-            isSuccess: false,
-            code: 7,
-            message:
-                "Body Parameter Error : 'pwd' 형식이 잘못되었습니다. (10자 이상 20자 미만)"
+            result: {
+                email: null,
+                jwt: null
+            },
+            ...changeObj(
+                false,
+                5,
+                `Body Parameter Error : 'pwd' 형식이 잘못되었습니다. (10자 이상 20자 미만)`
+            )
         });
 
     try {
@@ -223,9 +281,11 @@ exports.login = async function(req, res) {
 
             if (userInfoRow.length < 1) {
                 return res.status(400).json({
-                    isSuccess: false,
-                    code: 2,
-                    message: "회원 정보를 찾을 수 없습니다."
+                    result: {
+                        email: null,
+                        jwt: null
+                    },
+                    ...changeObj(false, 2, `회원 정보를 찾을 수 없습니다.`)
                 });
             }
 
@@ -236,17 +296,25 @@ exports.login = async function(req, res) {
 
             if (userInfoRow[0].pwd !== hashedPassword) {
                 return res.status(400).json({
-                    isSuccess: false,
-                    code: 3,
-                    message: "email과 password가 부합하지 않습니다."
+                    result: {
+                        email: null,
+                        jwt: null
+                    },
+                    ...changeObj(
+                        false,
+                        3,
+                        `email과 password가 부합하지 않습니다.`
+                    )
                 });
             }
 
             if (userInfoRow[0].isDeleted) {
                 return res.status(400).json({
-                    isSuccess: false,
-                    code: 8,
-                    message: "탈퇴된 계정입니다."
+                    result: {
+                        email: null,
+                        jwt: null
+                    },
+                    ...changeObj(false, 8, `탈퇴된 계정입니다.`)
                 });
             }
             //토큰 생성
@@ -273,6 +341,10 @@ exports.login = async function(req, res) {
         } catch (err) {
             logger.error(`App - Login Query error\n: ${JSON.stringify(err)}`);
             return res.status(500).json({
+                result: {
+                    email: null,
+                    jwt: null
+                },
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -285,6 +357,10 @@ exports.login = async function(req, res) {
             `App - Login DB Connection error\n: ${JSON.stringify(err)}`
         );
         return res.status(500).json({
+            result: {
+                email: null,
+                jwt: null
+            },
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
@@ -302,6 +378,7 @@ exports.checkEmail = async function(req, res) {
 
     if (!email) {
         return res.status(400).json({
+            isExist: null,
             isSuccess: false,
             code: 3,
             message: "Body Parameter Error : 'email'이 존재하지않습니다."
@@ -310,6 +387,7 @@ exports.checkEmail = async function(req, res) {
 
     if (email.length >= 30 || !regexEmail.test(email))
         return res.status(400).json({
+            isExist: null,
             isSuccess: false,
             code: 4,
             message:
@@ -344,6 +422,7 @@ exports.checkEmail = async function(req, res) {
                 )}`
             );
             return res.status(500).json({
+                isExist: null,
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -356,6 +435,7 @@ exports.checkEmail = async function(req, res) {
             `App - Email Check DB Connection error\n: ${JSON.stringify(err)}`
         );
         return res.status(500).json({
+            isExist: null,
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
@@ -368,13 +448,22 @@ exports.checkEmail = async function(req, res) {
  **/
 exports.socialLogin = async function(req, res) {
     const { accessToken: token } = req.body;
+    const failObj = (code, message) => {
+        return {
+            result: {
+                email: null,
+                jwt: null
+            },
+            ...changeObj(false, code, message)
+        };
+    };
 
     if (!token) {
-        return res.status(400).json({
-            isSuccess: false,
-            code: 3,
-            message: "Body Parameter Error: AccessToken을 입력해주세요."
-        });
+        return res
+            .status(400)
+            .json(
+                failObj(3, `Body Parameter Error: AccessToken을 입력해주세요.`)
+            );
     }
 
     var header = "Bearer " + token; // Bearer 다음에 공백 추가
@@ -391,19 +480,24 @@ exports.socialLogin = async function(req, res) {
             const { email } = JSON.parse(body).response;
 
             if (!email)
-                return res.status(400).json({
-                    isSuccess: false,
-                    code: 4,
-                    message: "네이버 리소스에'email'이 존재하지 않습니다."
-                });
+                return res
+                    .status(400)
+                    .json(
+                        failObj(
+                            4,
+                            `네이버 리소스에'email'이 존재하지 않습니다.`
+                        )
+                    );
 
             if (email.length >= 30 || !regexEmail.test(email))
-                return res.status(400).json({
-                    isSuccess: false,
-                    code: 6,
-                    message:
-                        "네이버 리소스에 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)"
-                });
+                return res
+                    .status(400)
+                    .json(
+                        failObj(
+                            6,
+                            `네이버 리소스에 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)`
+                        )
+                    );
 
             try {
                 const connection = await pool.getConnection(async conn => conn);
@@ -414,12 +508,14 @@ exports.socialLogin = async function(req, res) {
                     );
 
                     if (!existObj.exist) {
-                        return res.status(400).json({
-                            isSuccess: false,
-                            code: 8,
-                            message:
-                                "회원가입을 위해 추가 정보를 입력해주세요. (nickname, birth)"
-                        });
+                        return res
+                            .status(400)
+                            .json(
+                                failObj(
+                                    8,
+                                    `회원가입을 위해 추가 정보를 입력해주세요. (nickname, birth)`
+                                )
+                            );
                     }
 
                     const userInfoRows = await userDao.selectUserInfo(
@@ -428,11 +524,9 @@ exports.socialLogin = async function(req, res) {
                     );
 
                     if (userInfoRows < 1) {
-                        return res.status(500).json({
-                            isSuccess: false,
-                            code: 500,
-                            message: "로그인 실패 : 서버 문의"
-                        });
+                        return res
+                            .status(500)
+                            .json(failObj(500, "로그인 실패 : 서버 문의"));
                     }
 
                     const { idx, email: dbEmail } = userInfoRows[0];
@@ -460,30 +554,28 @@ exports.socialLogin = async function(req, res) {
                 } catch (err) {
                     logger.error(`Naver login Api Error\n : ${err}`);
                     connection.rollback();
-                    return res.status(500).json({
-                        isSuccess: false,
-                        code: 500,
-                        message: "서버 에러 : 문의 요망"
-                    });
+                    return res
+                        .status(500)
+                        .json(failObj(500, `서버 에러 : 문의 요망`));
                 } finally {
                     connection.release();
                 }
             } catch (err) {
                 logger.error(`Naver Api DB Connection Error\n : ${err}`);
-                return res.status(500).json({
-                    isSuccess: false,
-                    code: 500,
-                    message: "서버 에러 : 문의 요망"
-                });
+                return res
+                    .status(500)
+                    .json(failObj(500, `서버 에러 : 문의 요망`));
             }
         } else {
             logger.error(`Access Token error\n: ${error}`);
-            return res.status(400).json({
-                isSuccess: false,
-                code: 2,
-                message:
-                    "AccessToken이 유효하지않습니다. (네이버 서버에서 정보를 가져오지 못함)"
-            });
+            return res
+                .status(400)
+                .json(
+                    failObj(
+                        2,
+                        `AccessToken이 유효하지않습니다. (네이버 서버에서 정보를 가져오지 못함)`
+                    )
+                );
         }
     });
 };

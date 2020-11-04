@@ -9,14 +9,16 @@ const responseObj = (isSuccess, code, message) => {
     };
 };
 
+function isNull(value) {
+    return value === undefined || value === null || value === "" ? true : false;
+}
+
 const connectionFunc = async (API, callback) => {
     try {
         const connection = await pool.getConnection(async conn => conn);
 
         try {
-            console.log("start");
             await callback(connection);
-            console.log("end");
         } catch (err) {
             logger.error(`App - ${API} DB Connection error\n: ${err.message}`);
             return res.status(500).json({
@@ -25,7 +27,6 @@ const connectionFunc = async (API, callback) => {
                 message: "서버 에러 : 문의 요망"
             });
         } finally {
-            console.log("finally");
             connection.release();
         }
     } catch (err) {
@@ -39,5 +40,6 @@ const connectionFunc = async (API, callback) => {
 };
 module.exports = {
     responseObj,
-    connectionFunc
+    connectionFunc,
+    isNull
 };
