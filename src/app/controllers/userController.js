@@ -31,7 +31,7 @@ exports.signUp = async function(req, res) {
     if (!email)
         return res.status(400).json(
             {
-                result: null,
+                result: {},
                 isSuccess: false,
                 code: 1,
                 message: "result가 null"
@@ -43,14 +43,22 @@ exports.signUp = async function(req, res) {
         );
 
     if (!pwd)
-        return res
-            .status(400)
-            .json(
-                failObj(
-                    4,
-                    `Body Parameter Error : 파라미터 'pwd'가 존재하지 않습니다.`
-                )
-            );
+        return res.status(400).json(
+            {
+                result: {
+                    email: "",
+                    jwt: ""
+                },
+                isSuccess: false,
+                code: 1,
+                message: "result가 null"
+            }
+
+            // failObj(
+            //     4,
+            //     `Body Parameter Error : 파라미터 'pwd'가 존재하지 않습니다.`
+            // )
+        );
 
     if (!nickname) {
         return res
