@@ -13,8 +13,7 @@ exports.addUserLocation = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
 
     if (!address) {
-        return res.status(400).json({
-            currentAddress: null,
+        return res.json({
             isSuccess: false,
             code: 3,
             message:
@@ -23,8 +22,7 @@ exports.addUserLocation = async function(req, res) {
     }
 
     if (!longitude) {
-        return res.status(400).json({
-            currentAddress: null,
+        return res.json({
             isSuccess: false,
             code: 4,
             message:
@@ -33,8 +31,7 @@ exports.addUserLocation = async function(req, res) {
     }
 
     if (!latitude) {
-        return res.status(400).json({
-            currentAddress: null,
+        return res.json({
             isSuccess: false,
             code: 5,
             message:
@@ -43,8 +40,7 @@ exports.addUserLocation = async function(req, res) {
     }
 
     if (!regexPos.test(longitude)) {
-        return res.status(400).json({
-            currentAddress: null,
+        return res.json({
             isSuccess: false,
             code: 7,
             message: "Body Parameter Error : 'longitude' 형식이 잘못되었습니다."
@@ -52,8 +48,7 @@ exports.addUserLocation = async function(req, res) {
     }
 
     if (!regexPos.test(latitude)) {
-        return res.status(400).json({
-            currentAddress: null,
+        return res.json({
             isSuccess: false,
             code: 8,
             message: "Body Parameter Error : 'latitude' 형식이 잘못되었습니다."
@@ -79,15 +74,14 @@ exports.addUserLocation = async function(req, res) {
 
             if (!newLocationIdx.insertId) {
                 logger.error("Add Location API Insert fail");
-                return res.status(500).json({
-                    currentAddress: null,
+                return res.json({
                     isSuccess: false,
                     code: 500,
                     message: "서버 에러 : 문의 요망"
                 });
             }
 
-            return res.status(200).json({
+            return res.json({
                 currentAddress: address,
                 isSuccess: true,
                 code: 1,
@@ -96,8 +90,7 @@ exports.addUserLocation = async function(req, res) {
         } catch (err) {
             logger.error(`Add Location API Error\n : ${err.message}`);
 
-            return res.status(500).json({
-                currentAddress: null,
+            return res.json({
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -108,8 +101,7 @@ exports.addUserLocation = async function(req, res) {
     } catch (err) {
         logger.error(`Add Location DB Connection Error\n : ${err.message}`);
 
-        return res.status(500).json({
-            currentAddress: null,
+        return res.json({
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
@@ -126,18 +118,8 @@ exports.getUserLocation = async function(req, res) {
     let size = req.query.size;
     const userIdx = req.verifiedToken.idx;
 
-    const failObj = (page = 1, size = 10) => {
-        return {
-            result: {
-                userLocations: []
-            },
-            page,
-            size
-        };
-    };
     if (page && isNaN(page)) {
-        return res.status(400).json({
-            ...failObj(),
+        return res.json({
             isSuccess: false,
             code: 4,
             message: "Query String Error: page 타입이 알맞지 않습니다."
@@ -145,8 +127,7 @@ exports.getUserLocation = async function(req, res) {
     }
 
     if (size && isNaN(size)) {
-        return res.status(400).json({
-            ...failObj(),
+        return res.json({
             isSuccess: false,
             code: 5,
             message: "Query String Error: size 타입이 알맞지 않습니다."
@@ -174,7 +155,7 @@ exports.getUserLocation = async function(req, res) {
                 connection
             );
 
-            return res.status(200).json({
+            return res.json({
                 result: {
                     userLocationRows,
                     page: parseInt(req.query.page) || 1,
@@ -187,8 +168,7 @@ exports.getUserLocation = async function(req, res) {
         } catch (err) {
             logger.error(`Add Location API Error\n : ${err.message}`);
 
-            return res.status(500).json({
-                ...failObj(page, size),
+            return res.json({
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -199,8 +179,7 @@ exports.getUserLocation = async function(req, res) {
     } catch (err) {
         logger.error(`Add Location DB Connection Error\n : ${err.message}`);
 
-        return res.status(500).json({
-            ...failObj(page, size),
+        return res.json({
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
@@ -216,8 +195,7 @@ exports.deleteUserLocation = async function(req, res) {
     const { idx } = req.params;
     const userIdx = req.verifiedToken.idx;
     if (idx && isNaN(idx)) {
-        return res.status(400).json({
-            locationIdx: null,
+        return res.json({
             isSuccess: false,
             code: 3,
             message: "Path Parameter Error : 'idx' 형식이 잘못되었습니다."
@@ -235,8 +213,7 @@ exports.deleteUserLocation = async function(req, res) {
             );
 
             if (!isExistLocation) {
-                return res.status(200).json({
-                    locationIdx: null,
+                return res.json({
                     isSuccess: true,
                     code: 3,
                     message: "이미 존재하지않는 위치입니다."
@@ -248,7 +225,7 @@ exports.deleteUserLocation = async function(req, res) {
                 connection
             );
 
-            return res.status(200).json({
+            return res.json({
                 locationIdx: parseInt(idx),
                 isSuccess: true,
                 code: 1,
@@ -257,8 +234,7 @@ exports.deleteUserLocation = async function(req, res) {
         } catch (err) {
             logger.error(`Add Location API Error\n : ${err.message}`);
 
-            return res.status(500).json({
-                locationIdx: null,
+            return res.json({
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -269,8 +245,7 @@ exports.deleteUserLocation = async function(req, res) {
     } catch (err) {
         logger.error(`Add Location DB Connection Error\n : ${err.message}`);
 
-        return res.status(500).json({
-            locationIdx: null,
+        return res.json({
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
@@ -285,14 +260,6 @@ exports.deleteUserLocation = async function(req, res) {
 exports.getCurrentAddress = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
 
-    const responseObj = (isSuccess, code, message, currentAddress = null) => {
-        return {
-            currentAddress,
-            isSuccess,
-            code,
-            message
-        };
-    };
     try {
         const connection = await pool.getConnection(async conn => conn);
 
@@ -303,35 +270,37 @@ exports.getCurrentAddress = async function(req, res) {
             );
 
             if (currentAddressRow.length < 1) {
-                return res
-                    .status(400)
-                    .json(
-                        responseObj(false, 3, "현재 주소가 존재하지 않습니다.")
-                    );
+                return res.json({
+                    isSuccess: false,
+                    code: 3,
+                    message: "현재 주소가 존재하지 않습니다."
+                });
             }
 
-            res.status(200).json(
-                responseObj(
-                    true,
-                    1,
-                    "현재 주소 조회 성공",
-                    currentAddressRow[0].address
-                )
-            );
+            res.json({
+                currentAddress: currentAddressRow[0].address,
+                isSuccess: true,
+                code: 1,
+                message: "현재 주소 조회 성공"
+            });
         } catch (err) {
             logger.error(`Add Location API Error\n : ${err.message}`);
 
-            return res
-                .status(500)
-                .json(responseObj(false, 500, "서버 에러 : 문의 요망"));
+            return res.json({
+                isSuccess: false,
+                code: 500,
+                message: "서버 에러 : 문의 요망"
+            });
         } finally {
             connection.release();
         }
     } catch (err) {
         logger.error(`Add Location DB Connection Error\n : ${err.message}`);
 
-        return res
-            .status(500)
-            .json(responseObj(false, 500, "서버 에러 : 문의 요망"));
+        return res.json({
+            isSuccess: false,
+            code: 500,
+            message: "서버 에러 : 문의 요망"
+        });
     }
 };

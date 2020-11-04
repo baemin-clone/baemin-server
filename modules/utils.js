@@ -21,7 +21,7 @@ const connectionFunc = async (API, callback) => {
             await callback(connection);
         } catch (err) {
             logger.error(`App - ${API} DB Connection error\n: ${err.message}`);
-            return res.status(500).json({
+            return res.json({
                 isSuccess: false,
                 code: 500,
                 message: "서버 에러 : 문의 요망"
@@ -31,7 +31,7 @@ const connectionFunc = async (API, callback) => {
         }
     } catch (err) {
         logger.error(`App - ${API} DB Connection error\n: ${err.message}`);
-        return res.status(500).json({
+        return res.json({
             isSuccess: false,
             code: 500,
             message: "서버 에러 : 문의 요망"
