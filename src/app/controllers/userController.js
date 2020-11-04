@@ -32,7 +32,6 @@ exports.signUp = async function(req, res) {
         return res.status(200).json(
             //응답 test 용
             {
-                result: {},
                 isSuccess: false,
                 code: 1,
                 message: "result가 null"
