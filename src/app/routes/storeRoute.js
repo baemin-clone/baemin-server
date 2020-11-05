@@ -3,4 +3,12 @@ module.exports = function(app) {
     const jwtMiddleware = require("config/jwtMiddleware");
 
     app.route("/store/:idx/info").get(jwtMiddleware, store.getStoreSummary);
+    app.route("/store/:idx/delivery-info").get(
+        jwtMiddleware,
+        store.getStoreDeliveryInfo
+    );
+    app.route("/store/:idx/take-out").get(
+        jwtMiddleware,
+        store.getStoreTakeOutInfo
+    );
 };
