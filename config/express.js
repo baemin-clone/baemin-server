@@ -20,6 +20,7 @@ module.exports = function() {
     require("../src/app/routes/indexRoute")(app);
     require("../src/app/routes/userRoute")(app);
     require("../src/app/routes/locationRoute")(app);
+    require("../src/app/routes/storeRoute")(app);
 
     /* test 시에만*/
     require("../src/app/routes/test")(app);
