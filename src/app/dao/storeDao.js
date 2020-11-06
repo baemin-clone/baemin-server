@@ -10,7 +10,7 @@ async function selectStoreInfo(params, connection) {
 }
 
 async function isExistStore(params, connection) {
-    const query = `SELECT EXISTS(SELECT  * FROM store WHERE  idx = ? AND isDeleted = FALSE) as exist;`;
+    const query = `SELECT EXISTS(SELECT * FROM store WHERE idx = ? AND isDeleted = FALSE) as exist;`;
 
     const [existRow] = await connection.query(query, params);
 

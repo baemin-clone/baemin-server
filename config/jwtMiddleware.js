@@ -5,7 +5,7 @@ const jwtMiddleware = (req, res, next) => {
     const token = req.headers["x-access-token"] || req.query.token;
     // token does not exist
     if (!token) {
-        return res.status(403).json({
+        return res.json({
             isSuccess: false,
             code: 403,
             message: "token이 존재하지 않습니다."
@@ -22,7 +22,7 @@ const jwtMiddleware = (req, res, next) => {
 
     // if it has failed to verify, it will return an error message
     const onError = error => {
-        res.status(403).json({
+        res.json({
             isSuccess: false,
             code: 403,
             message: "유효하지않은 jwt입니다."

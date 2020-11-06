@@ -8,6 +8,8 @@ const crypto = require("crypto");
 const secret_config = require("config/secret");
 
 const userDao = require("dao/userDao");
+const locationDao = require("../dao/locationDao");
+
 const { constants } = require("buffer");
 
 const obj = require("modules/utils").responseObj;
@@ -258,10 +260,20 @@ exports.login = async function(req, res) {
                 } // 유효 시간은 365일
             );
 
-            res.json({
+            const currentLocationParams = [userInfoRow[0].idx, 0, 1];
+            const userCurrentLocationArray = await locationDao.selectUserLocation(
+                currentLocationParams,
+                connection
+            );
+
+            return res.json({
                 result: {
                     email: userInfoRow[0].email,
-                    jwt: token
+                    jwt: token,
+                    currentAddress:
+                        userCurrentLocationArray.length < 1
+                            ? ""
+                            : userCurrentLocationArray[0].address
                 },
                 isSuccess: true,
                 code: 1,
