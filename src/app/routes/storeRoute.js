@@ -13,4 +13,6 @@ module.exports = function(app) {
     );
 
     app.route("/store").get(jwtMiddleware, store.getStoreList);
+
+    app.route("/store/:idx/menu-list").get(jwtMiddleware, store.getMenuList);
 };

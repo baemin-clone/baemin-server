@@ -68,15 +68,37 @@ async function selectStoreList(params, connection) {
 
     const [storeListRows] = await connection.query(query, params);
 
-    console.log(storeListRows);
     return storeListRows;
 }
 
+async function selectStoreDescription(params, connection) {
+    const query = `SELECT IFNULL(description, "") as description FROM store WHERE idx= ?;`;
+    const [descriptionRows] = await connection.query(query, params);
+
+    return descriptionRows;
+}
+
+async function selectMenuGroup(params, connection) {
+    const query = `SELECT idx as menuGroupIdx, title, highlight FROM menuGroup WHERE store_fk = ? AND isDeleted =FALSE;`;
+    const [menuGroupRows] = await connection.query(query, params);
+
+    return menuGroupRows;
+}
+
+async function selectMenuInfo(params, connection) {
+    const query = `SELECT idx as menuIdx, title as menuTitle, IFNULL(description, '') as menuDescription, price, IFNULL(photoPath,'') as photoPath FROM menu WHERE menuGroup_fk = ?;`;
+    const [menuInfoRows] = await connection.query(query, params);
+
+    return menuInfoRows;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
     selectReviewNumAndStar,
     selectStoreBookmarkNum,
     selectMyBookmark,
-    selectStoreList
+    selectStoreList,
+    selectStoreDescription,
+    selectMenuGroup,
+    selectMenuInfo
 };

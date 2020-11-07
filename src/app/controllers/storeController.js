@@ -306,3 +306,72 @@ exports.getStoreList = async function(req, res) {
         });
     });
 };
+
+/**
+ update : 2020.11.8
+ 10.Get Menu List  API = 식당 리스트 조회 api
+ */
+exports.getMenuList = async function(req, res) {
+    const storeIdx = req.params.idx;
+
+    if (!storeIdx) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Path Parameter Error: storeIdx가 존재하지않습니다."
+            )
+        );
+    }
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Path Parameter Error: storeIdx에 숫자를 입력해주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Get Menu List Error`, async connection => {
+        const menuList = [];
+
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 식당입니다."));
+        }
+
+        const descriptionArray = await storeDao.selectStoreDescription(
+            [storeIdx],
+            connection
+        );
+
+        const menuGroupArray = await storeDao.selectMenuGroup(
+            [storeIdx],
+            connection
+        );
+
+        for (const item of menuGroupArray) {
+            const menuArray = await storeDao.selectMenuInfo(
+                [item.menuGroupIdx],
+                connection
+            );
+            const menuInfo = {
+                menuCategory: item.title,
+                highlight: item.highlight ? true : false,
+                menu: menuArray
+            };
+
+            menuList.push(menuInfo);
+        }
+
+        return res.json({
+            result: {
+                description: descriptionArray[0].description,
+                menu: menuList
+            }
+        });
+    });
+};
