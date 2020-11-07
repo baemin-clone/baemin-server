@@ -1,6 +1,6 @@
 async function selectStoreInfo(params, connection) {
     const query = `SELECT idx, logo, title, minOrderAmount, deliveryTime, 
-    deliveryTip, category, phoneNumber as phone, description, 
+    deliveryTip, phoneNumber as phone, description, 
     orderAvailability, guide,  orderAvailability, operatingTime, closedDay, 
     deliveryZone, payment, longitude, latitude FROM store WHERE idx = ?;`;
 
