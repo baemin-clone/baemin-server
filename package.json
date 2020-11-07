@@ -30,6 +30,7 @@
     },
     "devDependencies": {
         "mocha": "^8.2.0",
+        "request-promise-native": "^1.0.9",
         "should": "^13.2.3",
         "supertest": "^6.0.0"
     },

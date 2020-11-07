@@ -1,4 +1,4 @@
-const request = require("request");
+const request = require("request-promise-native");
 
 const tryCatch = require("modules/utils").connectionFunc;
 
@@ -8,6 +8,7 @@ const storeDao = require("../dao/storeDao");
 
 const naverAccount = require("config/secret").naverAccount;
 const INF = 123456789;
+
 exports.getStoreSummary = async function(req, res) {
     const storeIdx = req.params.idx;
 
@@ -217,7 +218,7 @@ exports.getStoreList = async function(req, res) {
             [userIdx, page, size],
             connection
         );
-        const { address, longitude, latitude } = currentUserLocationArray[0];
+        const { longitude, latitude } = currentUserLocationArray[0];
 
         if (currentUserLocationArray.length < 1) {
             return res.json(obj(false, 400, "유저 위치를 먼저 지정해주세요"));
@@ -225,6 +226,7 @@ exports.getStoreList = async function(req, res) {
 
         const storeListParams = [
             category,
+            userIdx,
             minAmount,
             tip,
             star,
@@ -238,19 +240,69 @@ exports.getStoreList = async function(req, res) {
             connection
         );
 
-        const func = () => {
-            return new Promise((resolve, reject) => {});
-        };
+        const distanceArray = [];
+
+        for (const item of filteredStoreArray) {
+            const encodedUrl = encodeURI(item.address);
+            const api_url = `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodedUrl}&coordinate=${longitude},${latitude}`;
+            const options = {
+                url: api_url,
+                headers: {
+                    "X-NCP-APIGW-API-KEY-ID": naverAccount.id,
+                    "X-NCP-APIGW-API-KEY": naverAccount.secret
+                }
+            };
+
+            const result = await request(options);
+            const resultObj = JSON.parse(result);
+
+            if (resultObj.addresses[0].distance) {
+                distanceArray.push(resultObj.addresses[0].distance);
+            } else {
+                distanceArray.push(INF);
+            }
+        }
+
+        const filteredStoreArrayByDistance = filteredStoreArray.filter(
+            (store, idx) => {
+                if (distanceArray[idx] > 3000) {
+                    return true;
+                }
+
+                return false;
+            }
+        );
+
+        const result = [];
+        for (const item of filteredStoreArrayByDistance) {
+            const {
+                storeIdx,
+                logo,
+                title,
+                avgStar,
+                reviewNum,
+                recommendation,
+                deliveryTime,
+                minOrderAmount,
+                tip
+            } = item;
+
+            result.push({
+                storeIdx,
+                logo,
+                title,
+                avgStar,
+                reviewNum: parseInt(reviewNum / 10) * 10 + "+",
+                recommendation,
+                deliveryTime: deliveryTime + "분",
+                minOrderAmount: "최소주문" + minOrderAmount + "원",
+                tip: "배달팁 " + tip + "원"
+            });
+        }
+
+        return res.json({
+            result,
+            ...obj(true, 200, "음식점 리스트 조회 성공")
+        });
     });
 };
-
-// const api_url = `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodedUrl}&coordinate=${longitude},${latitude}`;
-// const options = {
-//     url: api_url,
-//     headers: {
-//         "X-NCP-APIGW-API-KEY-ID": naverAccount.id,
-//         "X-NCP-APIGW-API-KEY": naverAccount.secret
-//     }
-// };
-// const distanceArray = [];
-// const encodedUrl = encodeURI(item.roadAddress);
