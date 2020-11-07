@@ -86,10 +86,31 @@ async function selectMenuGroup(params, connection) {
 }
 
 async function selectMenuInfo(params, connection) {
-    const query = `SELECT idx as menuIdx, title as menuTitle, IFNULL(description, '') as menuDescription, price, IFNULL(photoPath,'') as photoPath FROM menu WHERE menuGroup_fk = ?;`;
+    const query = `SELECT idx as menuIdx, title as menuTitle, IFNULL(description, '') as menuDescription, price, IFNULL(photoPath,'') as photoPath, IFNULL(details, '') as details FROM menu WHERE menuGroup_fk = ?;`;
     const [menuInfoRows] = await connection.query(query, params);
 
     return menuInfoRows;
+}
+
+async function selectMenuInfoByIdx(params, connection) {
+    const query = `SELECT idx as menuIdx, title as menuTitle, IFNULL(description, '') as menuDescription, price, IFNULL(photoPath,'') as photoPath, IFNULL(details, '') as details FROM menu WHERE idx = ?;`;
+    const [menuInfoRows] = await connection.query(query, params);
+
+    return menuInfoRows;
+}
+
+async function selectOptionGroup(params, connection) {
+    const query = `SELECT idx, title, isRequired FROM optionGroup WHERE menu_fk = ?;`;
+    const [optionGroupRows] = await connection.query(query, params);
+
+    return optionGroupRows;
+}
+
+async function selectOptions(params, connection) {
+    const query = `SELECT idx as optionIdx, title, price  FROM menuOption WHERE optionGroup_fk = ?;`;
+    const [optionRows] = await connection.query(query, params);
+
+    return optionRows;
 }
 module.exports = {
     selectStoreInfo,
@@ -100,5 +121,8 @@ module.exports = {
     selectStoreList,
     selectStoreDescription,
     selectMenuGroup,
-    selectMenuInfo
+    selectMenuInfo,
+    selectOptionGroup,
+    selectOptions,
+    selectMenuInfoByIdx
 };

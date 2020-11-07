@@ -11,8 +11,11 @@ module.exports = function(app) {
         jwtMiddleware,
         store.getStoreTakeOutInfo
     );
-
     app.route("/store").get(jwtMiddleware, store.getStoreList);
 
     app.route("/store/:idx/menu-list").get(jwtMiddleware, store.getMenuList);
+    app.route("/menu-list/:idx/options").get(
+        jwtMiddleware,
+        store.getMenuOptions
+    );
 };

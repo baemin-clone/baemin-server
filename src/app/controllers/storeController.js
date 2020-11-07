@@ -309,7 +309,7 @@ exports.getStoreList = async function(req, res) {
 
 /**
  update : 2020.11.8
- 10.Get Menu List  API = 식당 리스트 조회 api
+ 14.Get Menu List  API = 식당 리스트 조회 api
  */
 exports.getMenuList = async function(req, res) {
     const storeIdx = req.params.idx;
@@ -371,7 +371,68 @@ exports.getMenuList = async function(req, res) {
             result: {
                 description: descriptionArray[0].description,
                 menu: menuList
-            }
+            },
+            ...obj(true, 200, "메뉴 리스트 조회 성공")
+        });
+    });
+};
+
+/**
+ update : 2020.11.8
+ 15.Get Menu Options  API = 메뉴 옵션 조회 api
+ */
+exports.getMenuOptions = async function(req, res) {
+    const options = [];
+    const idx = req.params.idx;
+
+    if (isNaN(idx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Path Parameter Error: menu-idx에 숫자를 입력해주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Get Menu Options Api`, async connection => {
+        const menuInfoArray = await storeDao.selectMenuInfoByIdx(
+            [idx],
+            connection
+        );
+
+        if (menuInfoArray.length < 1) {
+            return res.json(obj(false, 401, "존재하지않는 메뉴입니다."));
+        }
+
+        const optionGroupArray = await storeDao.selectOptionGroup(
+            [idx],
+            connection
+        );
+
+        for (const item of optionGroupArray) {
+            const optionsArray = await storeDao.selectOptions(
+                [item.idx],
+                connection
+            );
+
+            const resultObj = {
+                groupTitle: item.title,
+                required: item.isRequired ? true : false,
+                contents: optionsArray
+            };
+
+            options.push(resultObj);
+        }
+
+        return res.json({
+            result: {
+                photoPath: menuInfoArray[0].photoPath,
+                menuTitle: menuInfoArray[0].menuTitle,
+                details: menuInfoArray[0].details,
+                options
+            },
+            ...obj(true, 200, "옵션 리스트 조회 성공")
         });
     });
 };
