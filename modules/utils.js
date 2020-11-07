@@ -38,6 +38,7 @@ const connectionFunc = async (API, callback) => {
         });
     }
 };
+
 module.exports = {
     responseObj,
     connectionFunc,

@@ -1,8 +1,13 @@
+const request = require("request");
+
 const tryCatch = require("modules/utils").connectionFunc;
 
 const obj = require("modules/utils").responseObj;
+const locationDao = require("../dao/locationDao");
 const storeDao = require("../dao/storeDao");
 
+const naverAccount = require("config/secret").naverAccount;
+const INF = 123456789;
 exports.getStoreSummary = async function(req, res) {
     const storeIdx = req.params.idx;
 
@@ -127,3 +132,125 @@ exports.getStoreTakeOutInfo = async function(req, res) {
         });
     });
 };
+
+/**
+ update : 2020.11.6
+ 10.Get Store list  API = 식당 리스트 조회 api
+ */
+exports.getStoreList = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+    const orderBy = {
+        기본순: "modifiedAt",
+        주문많은순: "reviewNum",
+        별점높은순: "avgStar",
+        찜많은순: "bookmarkNum"
+    };
+    let { category, order, minAmount, tip, star, page, size } = req.query;
+
+    if (!category) {
+        return res.json(
+            obj(false, 400, "Query Paramter Error: category를 지정해주세요!")
+        );
+    }
+
+    if (
+        !order ||
+        !(
+            order == "가까운순" ||
+            order == "주문많은순" ||
+            order == "별점높은순" ||
+            order == "찜많은순"
+        )
+    ) {
+        order = "기본순";
+    }
+
+    if (
+        !minAmount ||
+        !(
+            minAmount == 5000 ||
+            minAmount == 10000 ||
+            minAmount == 12000 ||
+            minAmount == 15000 ||
+            minAmount == 20000
+        )
+    ) {
+        minAmount = INF;
+    }
+
+    if (!tip || !(tip == 0 || tip == 1000 || tip == 2000 || tip == 3000)) {
+        tip = INF;
+    }
+
+    if (!star || !(star == 3.5 || star == 4.0 || star == 4.5)) {
+        star = 0;
+    }
+
+    if (page && isNaN(page)) {
+        return res.json({
+            isSuccess: false,
+            code: 4,
+            message: "Query String Error: page 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (size && isNaN(size)) {
+        return res.json({
+            isSuccess: false,
+            code: 5,
+            message: "Query String Error: size 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (!page) {
+        page = 1;
+    }
+    if (!size) {
+        size = 10;
+    }
+
+    page = (page - 1) * size;
+    size = parseInt(page) + parseInt(size);
+
+    await tryCatch("Get Store List", async connection => {
+        const currentUserLocationArray = await locationDao.selectUserLocation(
+            [userIdx, page, size],
+            connection
+        );
+        const { address, longitude, latitude } = currentUserLocationArray[0];
+
+        if (currentUserLocationArray.length < 1) {
+            return res.json(obj(false, 400, "유저 위치를 먼저 지정해주세요"));
+        }
+
+        const storeListParams = [
+            category,
+            minAmount,
+            tip,
+            star,
+            orderBy[order],
+            page,
+            size
+        ];
+
+        const filteredStoreArray = await storeDao.selectStoreList(
+            storeListParams,
+            connection
+        );
+
+        const func = () => {
+            return new Promise((resolve, reject) => {});
+        };
+    });
+};
+
+// const api_url = `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodedUrl}&coordinate=${longitude},${latitude}`;
+// const options = {
+//     url: api_url,
+//     headers: {
+//         "X-NCP-APIGW-API-KEY-ID": naverAccount.id,
+//         "X-NCP-APIGW-API-KEY": naverAccount.secret
+//     }
+// };
+// const distanceArray = [];
+// const encodedUrl = encodeURI(item.roadAddress);

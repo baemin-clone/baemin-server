@@ -11,4 +11,6 @@ module.exports = function(app) {
         jwtMiddleware,
         store.getStoreTakeOutInfo
     );
+
+    app.route("/store").get(jwtMiddleware, store.getStoreList);
 };

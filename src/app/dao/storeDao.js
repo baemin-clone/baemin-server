@@ -43,10 +43,30 @@ async function selectMyBookmark(params, connection) {
     return isBookmark[0].isBookmark;
 }
 
+async function selectStoreList(params, connection) {
+    const query = `SELECT * FROM store t JOIN(
+        SELECT s.idx as storeIdx, logo, title, IFNULL(avgStar, 0) as avgStar, IFNULL(rn.reviewNum, 0) as reviewNum, deliveryTime, minOrderAmount, deliveryTip as tip, IFNULL(bn.bookmarkNum, 0) as bookmarkNum  FROM store s
+            JOIN (SELECT idx, store_fk, tag FROM hashtag WHERE tag = ?) h
+                ON s.idx = h.store_fk
+            LEFT OUTER JOIN (SELECT AVG(star) as avgStar, COUNT(*) as reviewNum, store_fk FROM review GROUP BY store_fk) rn
+                ON h.store_fk = rn.store_fk
+            LEFT OUTER JOIN (SELECT COUNT(*) as bookmarkNum, store_fk FROM bookmark GROUP BY store_fk) bn
+                ON h.store_fk = bn.store_fk) s ON t.idx = s.storeIdx
+    WHERE s.minOrderAmount <= ? AND s.tip <= ? AND s.avgStar >= ?
+    ORDER BY ? DESC
+    LIMIT ?,?;`;
+
+    const [storeListRows] = await connection.query(query, params);
+
+    console.log(storeListRows);
+    return storeListRows;
+}
+
 module.exports = {
     selectStoreInfo,
     isExistStore,
     selectReviewNumAndStar,
     selectStoreBookmarkNum,
-    selectMyBookmark
+    selectMyBookmark,
+    selectStoreList
 };

@@ -384,11 +384,11 @@ exports.socialLogin = async function(req, res) {
         );
     }
 
-    var header = "Bearer " + token; // Bearer 다음에 공백 추가
+    const header = "Bearer " + token; // Bearer 다음에 공백 추가
 
-    var api_url = "https://openapi.naver.com/v1/nid/me";
-    var request = require("request");
-    var options = {
+    const api_url = "https://openapi.naver.com/v1/nid/me";
+    const request = require("request");
+    const options = {
         url: api_url,
         headers: { Authorization: header }
     };
@@ -497,7 +497,7 @@ exports.addUserInfo = async function(req, res) {
     if (!nickname) {
         return res.json({
             isSuccess: false,
-            code: 5,
+            code: 3,
             message:
                 "Body Parameter Error : 파라미터 'nickname'이 존재하지 않습니다."
         });
@@ -506,7 +506,7 @@ exports.addUserInfo = async function(req, res) {
     if (!birth) {
         return res.json({
             isSuccess: false,
-            code: 6,
+            code: 4,
             message:
                 "Body Parameter Error : 파라미터 'birth'가 존재하지 않습니다."
         });
@@ -515,7 +515,7 @@ exports.addUserInfo = async function(req, res) {
     if (nickname.length < 2 || nickname.length >= 10) {
         return res.json({
             isSuccess: false,
-            code: 9,
+            code: 5,
             message:
                 "Body Parameter Error : 'nickname' 형식이 잘못되었습니다. (2자 이상 10자 미만)"
         });
@@ -524,7 +524,7 @@ exports.addUserInfo = async function(req, res) {
     if (!regexBirth.test(birth)) {
         return res.json({
             isSuccess: false,
-            code: 10,
+            code: 6,
             message:
                 "Body Parameter Error : 'birth' 형식이 잘못되었습니다. (yyyy.mm.dd 형식)"
         });
@@ -533,7 +533,7 @@ exports.addUserInfo = async function(req, res) {
     if (!token) {
         return res.json({
             isSuccess: false,
-            code: 3,
+            code: 2,
             message: "Body Parameter Error: AccessToken을 입력해주세요."
         });
     }
@@ -554,14 +554,14 @@ exports.addUserInfo = async function(req, res) {
             if (!email)
                 return res.json({
                     isSuccess: false,
-                    code: 4,
-                    message: "네이버 리소스에 'email'이 존재하지 않습니다."
+                    code: 8,
+                    message: "네이버 계정에 'email'이 존재하지 않습니다."
                 });
 
             if (email.length >= 30 || !regexEmail.test(email))
                 return res.json({
                     isSuccess: false,
-                    code: 6,
+                    code: 100,
                     message:
                         "네이버 리소스에: 'email' 형식이 잘못되었습니다. (30자 미만, 이메일 정규표현 지키기)"
                 });
@@ -672,7 +672,7 @@ exports.deleteUser = async function(req, res) {
 
         return res.json({
             userIdx: userIdx,
-            ...obj(true, 2, "유저 삭제 완료")
+            ...obj(true, 1, "유저 삭제 완료")
         });
     });
 

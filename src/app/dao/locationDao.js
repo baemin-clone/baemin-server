@@ -8,7 +8,7 @@ async function insertUserLocation(params, connection) {
 }
 
 async function selectUserLocation(params, connection) {
-    const query = `SELECT idx, address, IFNULL(roadAddress, "") as roadAddress
+    const query = `SELECT idx, address, IFNULL(roadAddress, "") as roadAddress, longitude, latitude
     FROM userLocation
     WHERE user_fk = ? AND isDeleted = FALSE
     ORDER BY modifiedAt DESC
