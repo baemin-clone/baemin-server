@@ -829,10 +829,27 @@ exports.modifyUserInfo = async function(req, res) {
  03.check API = token 검증
  **/
 exports.check = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+    let address = "";
+
+    await tryCatch(`Check`, async connection => {
+        const currentAddressArray = await locationDao.selectUserLocation(
+            [userIdx, 0, 1],
+            connection
+        );
+
+        if (currentAddressArray.length >= 1) {
+            address = currentAddressArray[0].address;
+        }
+    });
+
     res.json({
         isSuccess: true,
         code: 200,
         message: "검증 성공",
-        info: req.verifiedToken
+        info: {
+            address,
+            ...req.verifiedToken
+        }
     });
 };
