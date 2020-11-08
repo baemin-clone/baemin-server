@@ -36,6 +36,13 @@ async function deleteUserLocation(params, connection) {
 
     return row;
 }
+
+async function isOrderableStore(params, connection) {
+    const query = `SELECT EXISTS(SELECT * FROM store WHERE isDeleted = FALSE AND idx = ? AND orderAvailability = TRUE) as exist;`;
+    const [isOrderRows] = await connection.query(query, params);
+
+    return isOrderRows[0].exist;
+}
 module.exports = {
     insertUserLocation,
     selectUserLocation,

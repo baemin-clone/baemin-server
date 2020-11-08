@@ -218,11 +218,12 @@ exports.getStoreList = async function(req, res) {
             [userIdx, page, size],
             connection
         );
-        const { longitude, latitude } = currentUserLocationArray[0];
 
         if (currentUserLocationArray.length < 1) {
             return res.json(obj(false, 400, "유저 위치를 먼저 지정해주세요"));
         }
+
+        const { longitude, latitude } = currentUserLocationArray[0];
 
         const storeListParams = [
             category,

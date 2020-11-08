@@ -112,6 +112,13 @@ async function selectOptions(params, connection) {
 
     return optionRows;
 }
+
+async function isOrderableStore(params, connection) {
+    const query = `SELECT EXISTS(SELECT * FROM store WHERE isDeleted = FALSE AND idx = ? AND orderAvailability = TRUE) as exist;`;
+    const [isOrderRows] = await connection.query(query, params);
+
+    return isOrderRows[0].exist;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -124,5 +131,6 @@ module.exports = {
     selectMenuInfo,
     selectOptionGroup,
     selectOptions,
-    selectMenuInfoByIdx
+    selectMenuInfoByIdx,
+    isOrderableStore
 };
