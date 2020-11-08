@@ -18,4 +18,9 @@ module.exports = function(app) {
         jwtMiddleware,
         store.getMenuOptions
     );
+
+    app.route("/store/:storeIdx/info-details").get(
+        jwtMiddleware,
+        store.getStoreDetails
+    );
 };

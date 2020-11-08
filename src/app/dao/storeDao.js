@@ -119,6 +119,27 @@ async function isOrderableStore(params, connection) {
 
     return isOrderRows[0].exist;
 }
+
+async function selectStoreDetails(params, connection) {
+    const query = `SELECT description2 as description, guide, operatingTime, closedDay as closedDays, phoneNumber as phone, deliveryZone,
+    IFNULL(recentOrderNum, 0) as recentOrderNum,
+     IFNULL(reviewNum, 0) as reviewNum,
+    IFNULL(bookmarkNum, 0) as bookmarkNum
+FROM store s
+ LEFT OUTER JOIN (
+     SELECT COUNT(*) as recentOrderNum, store_fk FROM userOrder WHERE store_fk = ? AND DATEDIFF(now(), createdAt) < 3 GROUP BY store_fk
+ ) recentOrderTable ON s.idx = recentOrderTable.store_fk
+ LEFT OUTER JOIN (
+     SELECT COUNT(*) as reviewNum, store_fk FROM review WHERE store_fk = ? AND isDeleted = FALSE GROUP BY store_fk
+ ) reviewNumTable On s.idx = reviewNumTable.store_fk
+ LEFT OUTER JOIN (
+     SELECT COUNT(*) as bookmarkNum, store_fk FROM bookmark WHERE store_fk = ? AND status = 'Y' GROUP BY store_fk
+ ) bookmarkNumTable On s.idx = bookmarkNumTable.store_fk
+WHERE idx=?;`;
+    const [storeDetailsRows] = await connection.query(query, params);
+
+    return storeDetailsRows;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -132,5 +153,6 @@ module.exports = {
     selectOptionGroup,
     selectOptions,
     selectMenuInfoByIdx,
-    isOrderableStore
+    isOrderableStore,
+    selectStoreDetails
 };

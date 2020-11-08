@@ -437,3 +437,65 @@ exports.getMenuOptions = async function(req, res) {
         });
     });
 };
+
+/**
+ update : 2020.11.8
+ 21.Get Store Details  API = 가게 상세정보 조회
+ */
+exports.getStoreDetails = async function(req, res) {
+    const storeIdx = req.params.storeIdx;
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Path Parameter Error : storeIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    await tryCatch("Get Store Details", async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 가게입니다."));
+        }
+
+        const storeDetailsArray = await storeDao.selectStoreDetails(
+            [storeIdx, storeIdx, storeIdx, storeIdx],
+            connection
+        );
+
+        const {
+            description,
+            guide,
+            recentOrderNum,
+            reviewNum,
+            bookmarkNum,
+            operatingTime,
+            closedDays,
+            phone,
+            deliveryZone
+        } = storeDetailsArray[0];
+
+        return res.json({
+            result: {
+                description,
+                guide,
+                statistics: {
+                    recentOrderNum: parseInt(recentOrderNum / 10) * 10 + "+",
+                    reviewNum,
+                    bookmarkNum
+                },
+                info: {
+                    operatingTime,
+                    closedDays,
+                    phone,
+                    deliveryZone
+                },
+                ...obj(true, 200, "가게 상세정보 조회 성공")
+            }
+        });
+    });
+};
