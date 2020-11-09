@@ -362,7 +362,7 @@ exports.getMenuList = async function(req, res) {
             const menuInfo = {
                 menuCategory: item.title,
                 highlight: item.highlight ? true : false,
-                menu: menuArray
+                contents: menuArray
             };
 
             menuList.push(menuInfo);
