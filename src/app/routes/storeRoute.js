@@ -25,4 +25,5 @@ module.exports = function(app) {
     );
 
     app.route("/brand").get(store.getBrand);
+    app.route("/recommend").get(store.getFilteredStore);
 };

@@ -509,3 +509,47 @@ exports.getBrand = async function(req, res) {
         });
     });
 };
+
+exports.getFilteredStore = async function(req, res) {
+    const { tag } = req.query;
+    const result = [];
+
+    if (!tag) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Query Parameter Error: 쿼리 파라미터를 넣어주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Get filtered Store`, async connection => {
+        const storeArray = await storeDao.selectFilteredStore(
+            [tag],
+            connection
+        );
+
+        for (const item of storeArray) {
+            const mainMenuToString = [];
+            const mainMenu = await storeDao.selectMainMenu(
+                [item.storeIdx],
+                connection
+            );
+
+            for (const menu of mainMenu) {
+                mainMenuToString.push(menu.title);
+            }
+
+            result.push({
+                ...item,
+                mainMenu: mainMenuToString.join()
+            });
+        }
+
+        return res.json({
+            result,
+            ...obj(true, 200, "추천 식당 조회 성공")
+        });
+    });
+};

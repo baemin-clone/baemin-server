@@ -142,10 +142,29 @@ WHERE idx=?;`;
 }
 
 async function selectBrand(connection) {
-    const query = `SELECT idx as brandIdx, logo, title, description, coupon, newMenu, notice FROM brand;`;
+    const query = `SELECT idx as brandIdx, logo, title, description, coupon, newMenu, notice FROM brand;p`;
     const [brandRows] = await connection.query(query);
 
     return brandRows;
+}
+
+async function selectFilteredStore(params, connection) {
+    const query = `SELECT logo, title, deliveryTime, store_fk as storeIdx FROM store s
+    JOIN hashtag h on s.idx = h.store_fk
+WHERE tag LIKE CONCAT('%',?,'%');`;
+
+    const [storeRows] = await connection.query(query, params);
+
+    return storeRows;
+}
+
+async function selectMainMenu(params, connection) {
+    const query = `SELECT m.title as title FROM menuGroup JOIN menu m on menuGroup.idx = m.menuGroup_fk
+                    WHERE store_fk = ? AND highlight = TRUE
+                    LIMIT 3;`;
+    const [mainMenu] = await connection.query(query, params);
+
+    return mainMenu;
 }
 module.exports = {
     selectStoreInfo,
@@ -162,5 +181,7 @@ module.exports = {
     selectMenuInfoByIdx,
     isOrderableStore,
     selectStoreDetails,
-    selectBrand
+    selectBrand,
+    selectFilteredStore,
+    selectMainMenu
 };

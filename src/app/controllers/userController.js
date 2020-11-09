@@ -677,46 +677,6 @@ exports.deleteUser = async function(req, res) {
             ...obj(true, 1, "유저 삭제 완료")
         });
     });
-
-    // try {
-    //     const connection = await pool.getConnection(async conn => conn);
-
-    //     try {
-    //         const isExist = await userDao.isExistUserByIdx(userIdx, connection);
-
-    //         if (!isExist) {
-    //             return res.status(200).json({
-    //                 userIdx: userIdx,
-    //                 ...changeObj(true, 2, "이미 존재하지않는 유저입니다.")
-    //             });
-    //         }
-
-    //         await userDao.deleteUser(userIdx, connection);
-
-    //         return res.status(200).json({
-    //             userIdx: userIdx,
-    //             ...changeObj(true, 2, "유저 삭제 완료")
-    //         });
-    //     } catch (err) {
-    //         logger.error(
-    //             `App - Delete User DB Connection error\n: ${err.message}`
-    //         );
-    //         return res.status(500).json({
-    //             isSuccess: false,
-    //             code: 500,
-    //             message: "서버 에러 : 문의 요망"
-    //         });
-    //     } finally {
-    //         connection.release();
-    //     }
-    // } catch (err) {
-    //     logger.error(`App - Delete User DB Connection error\n: ${err.message}`);
-    //     return res.status(500).json({
-    //         isSuccess: false,
-    //         code: 500,
-    //         message: "서버 에러 : 문의 요망"
-    //     });
-    // }
 };
 
 /**
@@ -858,7 +818,7 @@ exports.check = async function(req, res) {
 
 /**
  update : 2020.11.9
- 24.Prifile API = 프로파일 사진 변경
+ 24.Profile API = 프로파일 사진 변경
  **/
 exports.modifyProfile = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
