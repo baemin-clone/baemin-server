@@ -4,3 +4,4 @@ package-lock.json
 log/*
 .DS_Store
 config/secret.js
+src/app/routes/clientTest.js

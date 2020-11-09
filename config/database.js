@@ -1,11 +1,12 @@
-const mysql = require('mysql2/promise');
-const {logger} = require('./winston');
+const mysql = require("mysql2/promise");
+const { logger } = require("./winston");
+const { db } = require("./secret");
 
 const pool = mysql.createPool({
-    host: '',
-    user: '',
-    password: '',
-    database: ''
+    host: db.host,
+    user: db.user,
+    password: db.password,
+    database: db.database
 });
 
 module.exports = {
@@ -19,13 +20,19 @@ const exampleNonTransaction = async (sql, params) => {
             const [rows] = await connection.query(sql, params);
             connection.release();
             return rows;
-        } catch(err) {
-            logger.error(`example non transaction Query error\n: ${JSON.stringify(err)}`);
+        } catch (err) {
+            logger.error(
+                `example non transaction Query error\n: ${JSON.stringify(err)}`
+            );
             connection.release();
             return false;
         }
-    } catch(err) {
-        logger.error(`example non transaction DB Connection error\n: ${JSON.stringify(err)}`);
+    } catch (err) {
+        logger.error(
+            `example non transaction DB Connection error\n: ${JSON.stringify(
+                err
+            )}`
+        );
         return false;
     }
 };
@@ -39,14 +46,18 @@ const exampleTransaction = async (sql, params) => {
             await connection.commit(); // COMMIT
             connection.release();
             return rows;
-        } catch(err) {
+        } catch (err) {
             await connection.rollback(); // ROLLBACK
             connection.release();
-            logger.error(`example transaction Query error\n: ${JSON.stringify(err)}`);
+            logger.error(
+                `example transaction Query error\n: ${JSON.stringify(err)}`
+            );
             return false;
         }
-    } catch(err) {
-        logger.error(`example transaction DB Connection error\n: ${JSON.stringify(err)}`);
+    } catch (err) {
+        logger.error(
+            `example transaction DB Connection error\n: ${JSON.stringify(err)}`
+        );
         return false;
     }
 };
