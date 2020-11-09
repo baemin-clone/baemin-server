@@ -142,7 +142,7 @@ WHERE idx=?;`;
 }
 
 async function selectBrand(connection) {
-    const query = `SELECT idx as brandIdx, logo, title, description, coupon, newMenu, notice FROM brand;p`;
+    const query = `SELECT idx as brandIdx, logo, title, description, coupon, newMenu, notice FROM brand;`;
     const [brandRows] = await connection.query(query);
 
     return brandRows;
