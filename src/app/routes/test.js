@@ -2,6 +2,7 @@ const { pool } = require("config/database");
 
 const { upload } = require("modules/fileUpload");
 module.exports = function(app) {
+    const jwtMiddleware = require("config/jwtMiddleware");
     app.get("/users", async (req, res) => {
         const connection = await pool.getConnection(async conn => conn);
 
@@ -18,7 +19,7 @@ module.exports = function(app) {
         }
     });
 
-    app.post("/upload", upload.single("img"), (req, res) => {
+    app.post("/upload", jwtMiddleware, upload.single("img"), (req, res) => {
         try {
             console.log("req.file: ", req.file);
 

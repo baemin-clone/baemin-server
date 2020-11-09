@@ -1,6 +1,7 @@
 module.exports = function(app) {
     const user = require("../controllers/userController");
     const jwtMiddleware = require("config/jwtMiddleware");
+    const { upload } = require("modules/fileUpload");
 
     app.route("/signup").post(user.signUp);
     app.route("/login").post(user.login);
@@ -13,4 +14,10 @@ module.exports = function(app) {
     app.route("/signout").delete(jwtMiddleware, user.deleteUser);
 
     app.get("/check", jwtMiddleware, user.check);
+    app.patch(
+        "/profile",
+        jwtMiddleware,
+        upload.single("img"),
+        user.modifyProfile
+    );
 };

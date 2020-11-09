@@ -77,6 +77,13 @@ async function updateUserPwd(params, connection) {
     `;
     await connection.query(query, params);
 }
+
+async function updateProfilePath(params, connection) {
+    const query = `UPDATE user SET profilePath = ? WHERE idx = ?;`;
+
+    await connection.query(query, params);
+}
+
 module.exports = {
     userEmailCheck,
     insertUserInfo,
@@ -86,5 +93,6 @@ module.exports = {
     isExistUserByIdx,
     deleteUser,
     updateUserNickname,
-    updateUserPwd
+    updateUserPwd,
+    updateProfilePath
 };

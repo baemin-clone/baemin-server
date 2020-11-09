@@ -5,7 +5,9 @@ const jwt = require("jsonwebtoken");
 const regexEmail = require("regex-email");
 const regexBirth = /\d{4}\.\d{2}\.\d{2}/;
 const crypto = require("crypto");
+
 const secret_config = require("config/secret");
+const { defaultProfilePath } = require("config/secret");
 
 const userDao = require("dao/userDao");
 const locationDao = require("../dao/locationDao");
@@ -851,5 +853,27 @@ exports.check = async function(req, res) {
             address,
             ...req.verifiedToken
         }
+    });
+};
+
+/**
+ update : 2020.11.9
+ 24.Prifile API = 프로파일 사진 변경
+ **/
+exports.modifyProfile = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+    let location = defaultProfilePath;
+
+    if (req.file.location) {
+        location = req.file.location;
+    }
+    await tryCatch(`Modify Profile`, async connection => {
+        await userDao.updateProfilePath([location, userIdx], connection);
+        return res.json({
+            profilePath: location,
+            isSuccess: true,
+            code: 200,
+            message: "프로파일 변경 성공"
+        });
     });
 };
