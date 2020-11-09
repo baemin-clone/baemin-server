@@ -824,6 +824,7 @@ exports.modifyProfile = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
     let location = defaultProfilePath;
 
+    console.log(req.file);
     if (req.file) {
         location = req.file.location;
     }
