@@ -23,4 +23,6 @@ module.exports = function(app) {
         jwtMiddleware,
         store.getStoreDetails
     );
+
+    app.route("/brand").get(store.getBrand);
 };

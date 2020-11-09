@@ -499,3 +499,13 @@ exports.getStoreDetails = async function(req, res) {
         });
     });
 };
+
+exports.getBrand = async function(req, res) {
+    await tryCatch(`Get Brand`, async connection => {
+        const brandArray = await storeDao.selectBrand(connection);
+        return res.json({
+            result: brandArray,
+            ...obj(true, 200, "브랜드관 조회 성공")
+        });
+    });
+};

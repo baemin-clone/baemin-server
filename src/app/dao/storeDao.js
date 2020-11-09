@@ -140,6 +140,13 @@ WHERE idx=?;`;
 
     return storeDetailsRows;
 }
+
+async function selectBrand(connection) {
+    const query = `SELECT idx as brandIdx, logo, title, description, coupon, newMenu, notice FROM brand;`;
+    const [brandRows] = await connection.query(query);
+
+    return brandRows;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -154,5 +161,6 @@ module.exports = {
     selectOptions,
     selectMenuInfoByIdx,
     isOrderableStore,
-    selectStoreDetails
+    selectStoreDetails,
+    selectBrand
 };
