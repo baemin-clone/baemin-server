@@ -864,7 +864,7 @@ exports.modifyProfile = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
     let location = defaultProfilePath;
 
-    if (req.file.location) {
+    if (req.file) {
         location = req.file.location;
     }
     await tryCatch(`Modify Profile`, async connection => {
