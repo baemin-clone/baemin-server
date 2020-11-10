@@ -418,6 +418,7 @@ exports.getMenuOptions = async function(req, res) {
             );
 
             const resultObj = {
+                optionGroupIdx: item.idx,
                 groupTitle: item.title,
                 required: item.isRequired ? true : false,
                 contents: optionsArray
