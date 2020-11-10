@@ -215,7 +215,7 @@ exports.getStoreList = async function(req, res) {
 
     await tryCatch("Get Store List", async connection => {
         const currentUserLocationArray = await locationDao.selectUserLocation(
-            [userIdx, page, size],
+            [userIdx, 0, 1],
             connection
         );
 
@@ -295,7 +295,7 @@ exports.getStoreList = async function(req, res) {
                 avgStar,
                 reviewNum: parseInt(reviewNum / 10) * 10 + "+",
                 recommendation,
-                deliveryTime: deliveryTime + "분",
+                deliveryTime: deliveryTime,
                 minOrderAmount: "최소주문" + minOrderAmount + "원",
                 tip: "배달팁 " + tip + "원"
             });
