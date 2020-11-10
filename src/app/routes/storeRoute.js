@@ -26,4 +26,8 @@ module.exports = function(app) {
 
     app.route("/brand").get(store.getBrand);
     app.route("/recommend").get(store.getFilteredStore);
+
+    app.route("/store-title/:storeIdx").get(jwtMiddleware, store.getStoreTitle);
+
+    app.route("/basket/menu-info").get(jwtMiddleware, store.getBasketMenu);
 };

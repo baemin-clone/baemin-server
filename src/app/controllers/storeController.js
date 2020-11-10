@@ -428,6 +428,7 @@ exports.getMenuOptions = async function(req, res) {
 
         return res.json({
             result: {
+                basicPrice: menuInfoArray[0].basicPrice,
                 photoPath: menuInfoArray[0].photoPath,
                 menuTitle: menuInfoArray[0].menuTitle,
                 details: menuInfoArray[0].details,
@@ -550,6 +551,154 @@ exports.getFilteredStore = async function(req, res) {
         return res.json({
             result,
             ...obj(true, 200, "추천 식당 조회 성공")
+        });
+    });
+};
+
+exports.getStoreTitle = async function(req, res) {
+    const storeIdx = req.params.storeIdx;
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(false, 400, "Path Variable Error: storeIdx가 int형이 아닙니다.")
+        );
+    }
+    await tryCatch(`Get Store Title`, async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 식당입니다"));
+        }
+
+        const storeInfoArray = await storeDao.selectStoreInfo(
+            [storeIdx],
+            connection
+        );
+
+        return res.json({
+            storeTitle: storeInfoArray[0].title,
+            ...obj(true, 200, "가게 이름 조회 성공")
+        });
+    });
+};
+
+exports.getBasketMenu = async function(req, res) {
+    const { storeIdx, menuIdx, optionArray } = req.body;
+
+    if (!storeIdx || isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: storeIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    if (!menuIdx || isNaN(menuIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: menuIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    if (!optionArray || !Array.isArray(optionArray)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: optionArray를 Array로 넣어주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Get Basket Menu`, async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 식당입니다"));
+        }
+
+        const menuInfoArray = await storeDao.selectMenuInfoByIdx(
+            [menuIdx],
+            connection
+        );
+
+        const { basicPrice, menuTitle } = menuInfoArray[0];
+
+        const resultArray = [`기본 : ${menuTitle}`];
+        let totalPrice = basicPrice;
+
+        for (const item of optionArray) {
+            if (!item.optionGroupIdx || isNaN(item.optionGroupIdx)) {
+                return res.json(
+                    obj(
+                        false,
+                        400,
+                        "Body Parameter Error: OptionGroupIdx를 Int 형으로 넣어주세요."
+                    )
+                );
+            }
+            const optionGroupArray = await storeDao.selectOptionGroupByIdx(
+                [item.optionGroupIdx],
+                connection
+            );
+
+            if (optionGroupArray.length < 1) {
+                return res.json(obj(false, 402, "선택할 수 없는 옵션입니다."));
+            }
+
+            let tempString = `${optionGroupArray[0].title} : `;
+            if (!item.options || !Array.isArray(item.options)) {
+                return res.json(
+                    obj(
+                        false,
+                        400,
+                        "Body Parameter Error: options를 Array 형태로 넣어주세요."
+                    )
+                );
+            }
+
+            const buffer = [];
+
+            for (const optionIdx of item.options) {
+                if (isNaN(optionIdx)) {
+                    return res.json(
+                        obj(false, 400, "optionIdx를 Int 형으로 넣어주세요.")
+                    );
+                }
+
+                const optionArray = await storeDao.selectOptionByIdx(
+                    [optionIdx],
+                    connection
+                );
+
+                if (optionArray.length < 1) {
+                    return res.json(
+                        obj(false, 402, "선택할 수 없는 옵션입니다.")
+                    );
+                }
+
+                const { title, price } = optionArray[0];
+
+                buffer.push(`${title}${price == 0 ? "" : `(${price}원)`}`);
+                totalPrice += price;
+            }
+
+            tempString += buffer.join(" / ");
+            resultArray.push(tempString);
+        }
+
+        return res.json({
+            result: {
+                menuTitle,
+                price: totalPrice,
+                options: resultArray
+            },
+            ...obj(true, 200, "장바구니 메뉴 정보 조회 성공")
         });
     });
 };

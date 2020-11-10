@@ -18,7 +18,6 @@ const upload = multer({
         contentType: multerS3.AUTO_CONTENT_TYPE,
         acl: "public-read",
         key: (req, file, cb) => {
-            logger.error(`File Upload Error ${file}`);
             const userIdx = req.verifiedToken.idx;
             const filename = `${userIdx}_profile`;
             cb(null, filename);
