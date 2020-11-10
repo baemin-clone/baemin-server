@@ -179,6 +179,30 @@ async function selectMainMenu(params, connection) {
     return mainMenu;
 }
 
+async function selectStoreByKeyword(params, connection) {
+    const query = `SELECT t.roadAddress as address, s.storeIdx as storeIdx, s.logo as logo, t.title as title, avgStar, recommendation, t.deliveryTime, s.minOrderAmount, deliveryTip as tip, reviewNum FROM store t JOIN(
+        SELECT s.idx as storeIdx, s.logo as logo, s.title as title,
+               IFNULL(avgStar, 0) as avgStar, IFNULL(rn.reviewNum, 0) as reviewNum,
+               deliveryTime, minOrderAmount, deliveryTip as tip, IFNULL(bn.bookmarkNum, 0) as bookmarkNum, mgm.title as recommendation
+        FROM store s
+            JOIN (SELECT mg.store_fk, m.title FROM menuGroup mg
+                JOIN menu m on mg.idx = m.menuGroup_fk
+                    WHERE highlight = 1
+                GROUP BY store_fk) mgm ON s.idx = mgm.store_fk
+            LEFT OUTER JOIN (SELECT AVG(star) as avgStar, COUNT(*) as reviewNum, store_fk FROM review GROUP BY store_fk) rn
+                ON s.idx = rn.store_fk
+            LEFT OUTER JOIN (SELECT COUNT(*) as bookmarkNum, store_fk FROM bookmark GROUP BY store_fk) bn
+                ON s.idx = bn.store_fk) s ON t.idx = s.storeIdx
+            LEFT OUTER JOIN (SELECT store_fk, status FROM bookmark  b WHERE user_fk = ?) myBookmark
+                ON myBookmark.store_fk = s.storeIdx
+    WHERE s.minOrderAmount <= ? AND s.tip <= ? AND s.avgStar >= ? AND (t.title LIKE CONCAT('%',?,'%') OR recommendation LIKE CONCAT('%', ?, '%'))
+    ORDER BY ? DESC
+    LIMIT ?,?;`;
+
+    const [storeArray] = await connection.query(query, params);
+
+    return storeArray;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -198,5 +222,6 @@ module.exports = {
     selectFilteredStore,
     selectMainMenu,
     selectOptionGroupByIdx,
-    selectOptionByIdx
+    selectOptionByIdx,
+    selectStoreByKeyword
 };

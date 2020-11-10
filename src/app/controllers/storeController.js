@@ -703,3 +703,176 @@ exports.getBasketMenu = async function(req, res) {
         });
     });
 };
+
+exports.searchStore = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+
+    let { keyword, order, minAmount, tip, star, page, size } = req.query;
+
+    const orderBy = {
+        기본순: "modifiedAt",
+        주문많은순: "reviewNum",
+        별점높은순: "avgStar",
+        찜많은순: "bookmarkNum"
+    };
+
+    if (!keyword) {
+        return res.json(
+            obj(false, 400, "Query Parameter Error : keyword를 입력해주세요.")
+        );
+    }
+
+    if (
+        !order ||
+        !(
+            order == "가까운순" ||
+            order == "주문많은순" ||
+            order == "별점높은순" ||
+            order == "찜많은순"
+        )
+    ) {
+        order = "기본순";
+    }
+
+    if (
+        !minAmount ||
+        !(
+            minAmount == 5000 ||
+            minAmount == 10000 ||
+            minAmount == 12000 ||
+            minAmount == 15000 ||
+            minAmount == 20000
+        )
+    ) {
+        minAmount = INF;
+    }
+
+    if (!tip || !(tip == 0 || tip == 1000 || tip == 2000 || tip == 3000)) {
+        tip = INF;
+    }
+
+    if (!star || !(star == 3.5 || star == 4.0 || star == 4.5)) {
+        star = 0;
+    }
+
+    if (page && isNaN(page)) {
+        return res.json({
+            isSuccess: false,
+            code: 4,
+            message: "Query String Error: page 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (size && isNaN(size)) {
+        return res.json({
+            isSuccess: false,
+            code: 5,
+            message: "Query String Error: size 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (!page) {
+        page = 1;
+    }
+    if (!size) {
+        size = 10;
+    }
+
+    page = (page - 1) * size;
+    size = parseInt(page) + parseInt(size);
+
+    await tryCatch("Get Store List", async connection => {
+        const currentUserLocationArray = await locationDao.selectUserLocation(
+            [userIdx, 0, 1],
+            connection
+        );
+
+        if (currentUserLocationArray.length < 1) {
+            return res.json(obj(false, 400, "유저 위치를 먼저 지정해주세요"));
+        }
+
+        const { longitude, latitude } = currentUserLocationArray[0];
+
+        const storeListParams = [
+            userIdx,
+            minAmount,
+            tip,
+            star,
+            keyword,
+            keyword,
+            orderBy[order],
+            page,
+            size
+        ];
+
+        const filteredStoreArray = await storeDao.selectStoreByKeyword(
+            storeListParams,
+            connection
+        );
+
+        const distanceArray = [];
+
+        for (const item of filteredStoreArray) {
+            const encodedUrl = encodeURI(item.address);
+            const api_url = `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodedUrl}&coordinate=${longitude},${latitude}`;
+            const options = {
+                url: api_url,
+                headers: {
+                    "X-NCP-APIGW-API-KEY-ID": naverAccount.id,
+                    "X-NCP-APIGW-API-KEY": naverAccount.secret
+                }
+            };
+
+            const result = await request(options);
+            const resultObj = JSON.parse(result);
+
+            if (resultObj.addresses[0].distance) {
+                distanceArray.push(resultObj.addresses[0].distance);
+            } else {
+                distanceArray.push(INF);
+            }
+        }
+
+        const filteredStoreArrayByDistance = filteredStoreArray.filter(
+            (store, idx) => {
+                if (distanceArray[idx] > 3000) {
+                    return true;
+                }
+
+                return false;
+            }
+        );
+
+        const result = [];
+        for (const item of filteredStoreArrayByDistance) {
+            const {
+                storeIdx,
+                logo,
+                title,
+                avgStar,
+                reviewNum,
+                recommendation,
+                deliveryTime,
+                minOrderAmount,
+                tip
+            } = item;
+
+            result.push({
+                storeIdx,
+                logo,
+                title,
+                avgStar,
+                reviewNum: parseInt(reviewNum / 10) * 10 + "+",
+                recommendation,
+                deliveryTime: deliveryTime,
+                minOrderAmount: "최소주문" + minOrderAmount + "원",
+                tip: "배달팁 " + tip + "원"
+            });
+        }
+
+        return res.json({
+            result,
+            ...obj(true, 200, "음식점 리스트 검색 조회 성공")
+        });
+    });
+};

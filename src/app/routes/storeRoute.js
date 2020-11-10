@@ -30,4 +30,6 @@ module.exports = function(app) {
     app.route("/store-title/:storeIdx").get(jwtMiddleware, store.getStoreTitle);
 
     app.route("/basket/menu-info").get(jwtMiddleware, store.getBasketMenu);
+
+    app.route("/search-store").get(jwtMiddleware, store.searchStore);
 };
