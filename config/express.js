@@ -24,6 +24,7 @@ module.exports = function() {
     require("../src/app/routes/storeRoute")(app);
     require("../src/app/routes/orderRoute")(app);
     require("../src/app/routes/reviewRoute")(app);
+    require("../src/app/routes/authRoute")(app);
 
     /* test 시에만*/
     require("../src/app/routes/test")(app);
