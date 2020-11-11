@@ -1,5 +1,6 @@
 module.exports = function(app) {
-    const menu = require("../controllers/orderController");
+    const order = require("../controllers/orderController");
     const jwtMiddleware = require("config/jwtMiddleware");
-    app.route("/order").post(jwtMiddleware, menu.order);
+    app.route("/order").post(jwtMiddleware, order.order);
+    app.route("/history").get(jwtMiddleware, order.getHistory);
 };
