@@ -33,4 +33,9 @@ module.exports = function(app) {
 
     app.route("/search-store").get(jwtMiddleware, store.searchStore);
     app.route("/bookmark").get(jwtMiddleware, store.getBookmarkStore);
+
+    app.route("/bookmark/:storeIdx").patch(
+        jwtMiddleware,
+        store.changeBookmarkStatus
+    );
 };

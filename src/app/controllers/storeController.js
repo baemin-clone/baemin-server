@@ -919,3 +919,41 @@ exports.getBookmarkStore = async function(req, res) {
         });
     });
 };
+
+exports.changeBookmarkStatus = async function(req, res) {
+    const { storeIdx } = req.params;
+    const userIdx = req.verifiedToken.idx;
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Path Variable Error: storeIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Change Bookmark Satus`, async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 가게입니다"));
+        }
+
+        const insertId = await storeDao.toggleBookmarkStatus(
+            [userIdx, storeIdx],
+            connection
+        );
+
+        const getStatus = await storeDao.selectBookmarkByIdx(
+            [insertId],
+            connection
+        );
+
+        return res.json({
+            result: getStatus[0],
+            ...obj(true, 200, "찜하기 상태 변경 성공")
+        });
+    });
+};

@@ -225,6 +225,22 @@ LIMIT ?,?;`;
 
     return storeRows;
 }
+
+async function toggleBookmarkStatus(params, connection) {
+    const query = `INSERT INTO bookmark (user_fk, store_fk, status) VALUES (?,?,'Y') ON DUPLICATE KEY UPDATE status = IF(status ='Y','N', 'Y');`;
+
+    const [rows] = await connection.query(query, params);
+
+    return rows.insertId;
+}
+
+async function selectBookmarkByIdx(params, connection) {
+    const query = `SELECT status, store_fk as storeIdx FROM bookmark WHERE idx=?;`;
+
+    const [bookmarkRows] = await connection.query(query, params);
+
+    return bookmarkRows;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -246,5 +262,7 @@ module.exports = {
     selectOptionGroupByIdx,
     selectOptionByIdx,
     selectStoreByKeyword,
-    selectBookmarkStore
+    selectBookmarkStore,
+    toggleBookmarkStatus,
+    selectBookmarkByIdx
 };
