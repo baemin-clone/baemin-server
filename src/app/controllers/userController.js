@@ -694,11 +694,12 @@ exports.getUserInfo = async function(req, res) {
 
         const userInfo = await userDao.selectUserInfoByIdx(userIdx, connection);
 
-        const { email, nickname, phone } = userInfo;
+        const { email, nickname, phone, profilePath } = userInfo;
 
         return res.json({
             result: {
                 email,
+                profilePath,
                 nickname,
                 phone
             },
@@ -824,7 +825,6 @@ exports.modifyProfile = async function(req, res) {
     const userIdx = req.verifiedToken.idx;
     let location = defaultProfilePath;
 
-    console.log(req.file);
     if (req.file) {
         location = req.file.location;
     }
