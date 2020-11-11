@@ -203,6 +203,28 @@ async function selectStoreByKeyword(params, connection) {
 
     return storeArray;
 }
+
+async function selectBookmarkStore(params, connection) {
+    const query = `SELECT s.idx as storeIdx, s.logo as logo, s.title as title, avgStar, reviewNum, mgm.title as recommendation, deliveryTime, minOrderAmount, deliveryTip as tip FROM store s
+    JOIN (
+        SELECT mg.store_fk, m.title FROM menuGroup mg
+                JOIN menu m on mg.idx = m.menuGroup_fk
+                    WHERE highlight = 1
+                GROUP BY store_fk) mgm ON s.idx = mgm.store_fk
+    LEFT OUTER JOIN (
+        SELECT AVG(star) as avgStar, COUNT(*) as reviewNum, store_fk FROM review GROUP BY store_fk) rn
+                ON s.idx = rn.store_fk
+    LEFT OUTER JOIN (SELECT COUNT(*) as bookmarkNum, store_fk FROM bookmark GROUP BY store_fk) bn
+                ON s.idx = bn.store_fk
+    LEFT OUTER JOIN (SELECT store_fk, status FROM bookmark  b WHERE user_fk = ?) myBookmark
+                ON myBookmark.store_fk = s.idx
+WHERE myBookmark.status = 'Y'
+LIMIT ?,?;`;
+
+    const [storeRows] = await connection.query(query, params);
+
+    return storeRows;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -223,5 +245,6 @@ module.exports = {
     selectMainMenu,
     selectOptionGroupByIdx,
     selectOptionByIdx,
-    selectStoreByKeyword
+    selectStoreByKeyword,
+    selectBookmarkStore
 };

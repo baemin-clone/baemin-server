@@ -292,7 +292,7 @@ exports.getStoreList = async function(req, res) {
                 storeIdx,
                 logo,
                 title,
-                avgStar,
+                avgStar: avgStar.toFixed(1),
                 reviewNum: parseInt(reviewNum / 10) * 10 + "+",
                 recommendation,
                 deliveryTime: deliveryTime,
@@ -873,6 +873,49 @@ exports.searchStore = async function(req, res) {
         return res.json({
             result,
             ...obj(true, 200, "음식점 리스트 검색 조회 성공")
+        });
+    });
+};
+
+exports.getBookmarkStore = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+    let { page, size } = req.query;
+
+    if (page && isNaN(page)) {
+        return res.json({
+            isSuccess: false,
+            code: 4,
+            message: "Query String Error: page 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (size && isNaN(size)) {
+        return res.json({
+            isSuccess: false,
+            code: 5,
+            message: "Query String Error: size 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (!page) {
+        page = 1;
+    }
+    if (!size) {
+        size = 10;
+    }
+
+    page = (page - 1) * size;
+    size = parseInt(page) + parseInt(size);
+
+    await tryCatch(`Get Bookmark Store`, async connection => {
+        const bookmarkStoreArray = await storeDao.selectBookmarkStore(
+            [userIdx, page, size],
+            connection
+        );
+
+        return res.json({
+            result: bookmarkStoreArray,
+            ...obj(true, 200, "찜한 가게 조회 성공")
         });
     });
 };

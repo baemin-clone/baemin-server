@@ -32,4 +32,5 @@ module.exports = function(app) {
     app.route("/basket/menu-info").post(jwtMiddleware, store.getBasketMenu);
 
     app.route("/search-store").get(jwtMiddleware, store.searchStore);
+    app.route("/bookmark").get(jwtMiddleware, store.getBookmarkStore);
 };
