@@ -1,6 +1,7 @@
 const obj = require("modules/utils").responseObj;
 const tryCatch = require("modules/utils").connectionFunc;
 const reviewDao = require("../dao/reviewDao");
+const storeDao = require("../dao/storeDao");
 const { logger } = require("config/winston");
 
 exports.writeReview = async function(req, res) {
@@ -62,5 +63,66 @@ exports.writeReview = async function(req, res) {
             logger.error(`Write photo Path err${err}`);
             throw new Error("transaction Error");
         }
+    });
+};
+
+exports.getReviews = async function(req, res) {
+    const { storeIdx } = req.params;
+    const userIdx = req.verifiedToken.idx;
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: storeIdx를 Int 형으로 입력해주세요"
+            )
+        );
+    }
+
+    await tryCatch("Get Reviews", async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+        const reviews = [];
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 가게입니다."));
+        }
+
+        const isExistRecentOrder = await reviewDao.isExistRecentOrder(
+            [userIdx, storeIdx],
+            connection
+        );
+
+        const reviewArray = await reviewDao.selectReviewInfo(
+            [storeIdx],
+            connection
+        );
+
+        for (const item of reviewArray) {
+            const reviewIdx = item.reviewIdx;
+
+            const files = await reviewDao.selectReviewPhotos(
+                [reviewIdx],
+                connection
+            );
+
+            const filePath = [];
+
+            for (const file of files) {
+                filePath.push(file.photoPath);
+            }
+
+            reviews.push({
+                ...item,
+                reviewPhotoPath: filePath
+            });
+        }
+
+        return res.json({
+            result: {
+                isWrite: isExistRecentOrder ? true : false,
+                reviews
+            },
+            ...obj(true, 200, "리뷰 리스트 조회 성공")
+        });
     });
 };

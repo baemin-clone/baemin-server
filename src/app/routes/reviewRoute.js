@@ -8,4 +8,6 @@ module.exports = function(app) {
         reviewUpload.array("img", 4),
         review.writeReview
     );
+
+    app.route("/store/:storeIdx/reviews").get(jwtMiddleware, review.getReviews);
 };
