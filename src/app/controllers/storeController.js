@@ -215,7 +215,7 @@ exports.getStoreList = async function(req, res) {
 
     await tryCatch("Get Store List", async connection => {
         const currentUserLocationArray = await locationDao.selectUserLocation(
-            [userIdx, page, size],
+            [userIdx, 0, 1],
             connection
         );
 
@@ -292,10 +292,10 @@ exports.getStoreList = async function(req, res) {
                 storeIdx,
                 logo,
                 title,
-                avgStar,
+                avgStar: parseFloat(avgStar.toFixed(1)),
                 reviewNum: parseInt(reviewNum / 10) * 10 + "+",
                 recommendation,
-                deliveryTime: deliveryTime + "분",
+                deliveryTime: deliveryTime,
                 minOrderAmount: "최소주문" + minOrderAmount + "원",
                 tip: "배달팁 " + tip + "원"
             });
@@ -418,6 +418,7 @@ exports.getMenuOptions = async function(req, res) {
             );
 
             const resultObj = {
+                optionGroupIdx: item.idx,
                 groupTitle: item.title,
                 required: item.isRequired ? true : false,
                 contents: optionsArray
@@ -428,6 +429,7 @@ exports.getMenuOptions = async function(req, res) {
 
         return res.json({
             result: {
+                basicPrice: menuInfoArray[0].basicPrice,
                 photoPath: menuInfoArray[0].photoPath,
                 menuTitle: menuInfoArray[0].menuTitle,
                 details: menuInfoArray[0].details,
@@ -550,6 +552,416 @@ exports.getFilteredStore = async function(req, res) {
         return res.json({
             result,
             ...obj(true, 200, "추천 식당 조회 성공")
+        });
+    });
+};
+
+exports.getStoreTitle = async function(req, res) {
+    const storeIdx = req.params.storeIdx;
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(false, 400, "Path Variable Error: storeIdx가 int형이 아닙니다.")
+        );
+    }
+    await tryCatch(`Get Store Title`, async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 식당입니다"));
+        }
+
+        const storeInfoArray = await storeDao.selectStoreInfo(
+            [storeIdx],
+            connection
+        );
+
+        return res.json({
+            storeTitle: storeInfoArray[0].title,
+            ...obj(true, 200, "가게 이름 조회 성공")
+        });
+    });
+};
+
+exports.getBasketMenu = async function(req, res) {
+    const { storeIdx, menuIdx, optionArray } = req.body;
+
+    if (!storeIdx || isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: storeIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    if (!menuIdx || isNaN(menuIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: menuIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    if (!optionArray || !Array.isArray(optionArray)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Body Parameter Error: optionArray를 Array로 넣어주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Get Basket Menu`, async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 식당입니다"));
+        }
+
+        const menuInfoArray = await storeDao.selectMenuInfoByIdx(
+            [menuIdx],
+            connection
+        );
+
+        const { basicPrice, menuTitle } = menuInfoArray[0];
+
+        const resultArray = [`기본 : ${menuTitle}`];
+        let totalPrice = basicPrice;
+
+        for (const item of optionArray) {
+            if (!item.optionGroupIdx || isNaN(item.optionGroupIdx)) {
+                return res.json(
+                    obj(
+                        false,
+                        400,
+                        "Body Parameter Error: OptionGroupIdx를 Int 형으로 넣어주세요."
+                    )
+                );
+            }
+            const optionGroupArray = await storeDao.selectOptionGroupByIdx(
+                [item.optionGroupIdx],
+                connection
+            );
+
+            if (optionGroupArray.length < 1) {
+                return res.json(obj(false, 402, "선택할 수 없는 옵션입니다."));
+            }
+
+            let tempString = `${optionGroupArray[0].title} : `;
+            if (!item.options || !Array.isArray(item.options)) {
+                return res.json(
+                    obj(
+                        false,
+                        400,
+                        "Body Parameter Error: options를 Array 형태로 넣어주세요."
+                    )
+                );
+            }
+
+            const buffer = [];
+
+            for (const optionIdx of item.options) {
+                if (isNaN(optionIdx)) {
+                    return res.json(
+                        obj(false, 400, "optionIdx를 Int 형으로 넣어주세요.")
+                    );
+                }
+
+                const optionArray = await storeDao.selectOptionByIdx(
+                    [optionIdx],
+                    connection
+                );
+
+                if (optionArray.length < 1) {
+                    return res.json(
+                        obj(false, 402, "선택할 수 없는 옵션입니다.")
+                    );
+                }
+
+                const { title, price } = optionArray[0];
+
+                buffer.push(`${title}${price == 0 ? "" : `(${price}원)`}`);
+                totalPrice += price;
+            }
+
+            tempString += buffer.join(" / ");
+            resultArray.push(tempString);
+        }
+
+        return res.json({
+            result: {
+                menuTitle,
+                price: totalPrice,
+                options: resultArray
+            },
+            ...obj(true, 200, "장바구니 메뉴 정보 조회 성공")
+        });
+    });
+};
+
+exports.searchStore = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+
+    let { keyword, order, minAmount, tip, star, page, size } = req.query;
+
+    const orderBy = {
+        기본순: "modifiedAt",
+        주문많은순: "reviewNum",
+        별점높은순: "avgStar",
+        찜많은순: "bookmarkNum"
+    };
+
+    if (!keyword) {
+        return res.json(
+            obj(false, 400, "Query Parameter Error : keyword를 입력해주세요.")
+        );
+    }
+
+    if (
+        !order ||
+        !(
+            order == "가까운순" ||
+            order == "주문많은순" ||
+            order == "별점높은순" ||
+            order == "찜많은순"
+        )
+    ) {
+        order = "기본순";
+    }
+
+    if (
+        !minAmount ||
+        !(
+            minAmount == 5000 ||
+            minAmount == 10000 ||
+            minAmount == 12000 ||
+            minAmount == 15000 ||
+            minAmount == 20000
+        )
+    ) {
+        minAmount = INF;
+    }
+
+    if (!tip || !(tip == 0 || tip == 1000 || tip == 2000 || tip == 3000)) {
+        tip = INF;
+    }
+
+    if (!star || !(star == 3.5 || star == 4.0 || star == 4.5)) {
+        star = 0;
+    }
+
+    if (page && isNaN(page)) {
+        return res.json({
+            isSuccess: false,
+            code: 4,
+            message: "Query String Error: page 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (size && isNaN(size)) {
+        return res.json({
+            isSuccess: false,
+            code: 5,
+            message: "Query String Error: size 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (!page) {
+        page = 1;
+    }
+    if (!size) {
+        size = 10;
+    }
+
+    page = (page - 1) * size;
+    size = parseInt(page) + parseInt(size);
+
+    await tryCatch("Get Store List", async connection => {
+        const currentUserLocationArray = await locationDao.selectUserLocation(
+            [userIdx, 0, 1],
+            connection
+        );
+
+        if (currentUserLocationArray.length < 1) {
+            return res.json(obj(false, 400, "유저 위치를 먼저 지정해주세요"));
+        }
+
+        const { longitude, latitude } = currentUserLocationArray[0];
+
+        const storeListParams = [
+            userIdx,
+            minAmount,
+            tip,
+            star,
+            keyword,
+            keyword,
+            orderBy[order],
+            page,
+            size
+        ];
+
+        const filteredStoreArray = await storeDao.selectStoreByKeyword(
+            storeListParams,
+            connection
+        );
+
+        const distanceArray = [];
+
+        for (const item of filteredStoreArray) {
+            const encodedUrl = encodeURI(item.address);
+            const api_url = `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodedUrl}&coordinate=${longitude},${latitude}`;
+            const options = {
+                url: api_url,
+                headers: {
+                    "X-NCP-APIGW-API-KEY-ID": naverAccount.id,
+                    "X-NCP-APIGW-API-KEY": naverAccount.secret
+                }
+            };
+
+            const result = await request(options);
+            const resultObj = JSON.parse(result);
+
+            if (resultObj.addresses[0].distance) {
+                distanceArray.push(resultObj.addresses[0].distance);
+            } else {
+                distanceArray.push(INF);
+            }
+        }
+
+        const filteredStoreArrayByDistance = filteredStoreArray.filter(
+            (store, idx) => {
+                if (distanceArray[idx] > 3000) {
+                    return true;
+                }
+
+                return false;
+            }
+        );
+
+        const result = [];
+        for (const item of filteredStoreArrayByDistance) {
+            const {
+                storeIdx,
+                logo,
+                title,
+                avgStar,
+                reviewNum,
+                recommendation,
+                deliveryTime,
+                minOrderAmount,
+                tip
+            } = item;
+
+            result.push({
+                storeIdx,
+                logo,
+                title,
+                avgStar,
+                reviewNum: parseInt(reviewNum / 10) * 10 + "+",
+                recommendation,
+                deliveryTime: deliveryTime,
+                minOrderAmount: "최소주문" + minOrderAmount + "원",
+                tip: "배달팁 " + tip + "원"
+            });
+        }
+
+        return res.json({
+            result,
+            ...obj(true, 200, "음식점 리스트 검색 조회 성공")
+        });
+    });
+};
+
+exports.getBookmarkStore = async function(req, res) {
+    const result = [];
+    const userIdx = req.verifiedToken.idx;
+    let { page, size } = req.query;
+
+    if (page && isNaN(page)) {
+        return res.json({
+            isSuccess: false,
+            code: 4,
+            message: "Query String Error: page 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (size && isNaN(size)) {
+        return res.json({
+            isSuccess: false,
+            code: 5,
+            message: "Query String Error: size 타입이 알맞지 않습니다."
+        });
+    }
+
+    if (!page) {
+        page = 1;
+    }
+    if (!size) {
+        size = 10;
+    }
+
+    page = (page - 1) * size;
+    size = parseInt(page) + parseInt(size);
+
+    await tryCatch(`Get Bookmark Store`, async connection => {
+        const bookmarkStoreArray = await storeDao.selectBookmarkStore(
+            [userIdx, page, size],
+            connection
+        );
+
+        for (const item of bookmarkStoreArray) {
+            result.push({
+                ...item,
+                avgStar: parseFloat(item.avgStar.toFixed(1))
+            });
+        }
+
+        return res.json({
+            result,
+            ...obj(true, 200, "찜한 가게 조회 성공")
+        });
+    });
+};
+
+exports.changeBookmarkStatus = async function(req, res) {
+    const { storeIdx } = req.params;
+    const userIdx = req.verifiedToken.idx;
+
+    if (isNaN(storeIdx)) {
+        return res.json(
+            obj(
+                false,
+                400,
+                "Path Variable Error: storeIdx를 Int 형으로 넣어주세요."
+            )
+        );
+    }
+
+    await tryCatch(`Change Bookmark Satus`, async connection => {
+        const isExist = await storeDao.isExistStore([storeIdx], connection);
+
+        if (!isExist) {
+            return res.json(obj(false, 401, "존재하지않는 가게입니다"));
+        }
+
+        const insertId = await storeDao.toggleBookmarkStatus(
+            [userIdx, storeIdx],
+            connection
+        );
+
+        const getStatus = await storeDao.selectBookmarkByIdx(
+            [insertId],
+            connection
+        );
+
+        return res.json({
+            result: getStatus[0],
+            ...obj(true, 200, "찜하기 상태 변경 성공")
         });
     });
 };

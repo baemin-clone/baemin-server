@@ -93,7 +93,7 @@ async function selectMenuInfo(params, connection) {
 }
 
 async function selectMenuInfoByIdx(params, connection) {
-    const query = `SELECT idx as menuIdx, title as menuTitle, IFNULL(description, '') as menuDescription, price, IFNULL(photoPath,'') as photoPath, IFNULL(details, '') as details FROM menu WHERE idx = ?;`;
+    const query = `SELECT idx as menuIdx, title as menuTitle, IFNULL(description, '') as menuDescription, price, IFNULL(photoPath,'') as photoPath, IFNULL(details, '') as details, basicPrice FROM menu WHERE idx = ?;`;
     const [menuInfoRows] = await connection.query(query, params);
 
     return menuInfoRows;
@@ -106,11 +106,23 @@ async function selectOptionGroup(params, connection) {
     return optionGroupRows;
 }
 
+async function selectOptionGroupByIdx(params, connection) {
+    const query = `SELECT idx, title, isRequired FROM optionGroup WHERE idx = ?;`;
+    const [optionGroupRow] = await connection.query(query, params);
+    return optionGroupRow;
+}
+
 async function selectOptions(params, connection) {
     const query = `SELECT idx as optionIdx, title, price  FROM menuOption WHERE optionGroup_fk = ?;`;
     const [optionRows] = await connection.query(query, params);
 
     return optionRows;
+}
+async function selectOptionByIdx(params, connection) {
+    const query = `SELECT idx as optionIdx, title, price  FROM menuOption WHERE idx= ?;`;
+    const [optionRow] = await connection.query(query, params);
+
+    return optionRow;
 }
 
 async function isOrderableStore(params, connection) {
@@ -166,6 +178,69 @@ async function selectMainMenu(params, connection) {
 
     return mainMenu;
 }
+
+async function selectStoreByKeyword(params, connection) {
+    const query = `SELECT t.roadAddress as address, s.storeIdx as storeIdx, s.logo as logo, t.title as title, avgStar, recommendation, t.deliveryTime, s.minOrderAmount, deliveryTip as tip, reviewNum FROM store t JOIN(
+        SELECT s.idx as storeIdx, s.logo as logo, s.title as title,
+               IFNULL(avgStar, 0) as avgStar, IFNULL(rn.reviewNum, 0) as reviewNum,
+               deliveryTime, minOrderAmount, deliveryTip as tip, IFNULL(bn.bookmarkNum, 0) as bookmarkNum, mgm.title as recommendation
+        FROM store s
+            JOIN (SELECT mg.store_fk, m.title FROM menuGroup mg
+                JOIN menu m on mg.idx = m.menuGroup_fk
+                    WHERE highlight = 1
+                GROUP BY store_fk) mgm ON s.idx = mgm.store_fk
+            LEFT OUTER JOIN (SELECT AVG(star) as avgStar, COUNT(*) as reviewNum, store_fk FROM review GROUP BY store_fk) rn
+                ON s.idx = rn.store_fk
+            LEFT OUTER JOIN (SELECT COUNT(*) as bookmarkNum, store_fk FROM bookmark GROUP BY store_fk) bn
+                ON s.idx = bn.store_fk) s ON t.idx = s.storeIdx
+            LEFT OUTER JOIN (SELECT store_fk, status FROM bookmark  b WHERE user_fk = ?) myBookmark
+                ON myBookmark.store_fk = s.storeIdx
+    WHERE s.minOrderAmount <= ? AND s.tip <= ? AND s.avgStar >= ? AND (t.title LIKE CONCAT('%',?,'%') OR recommendation LIKE CONCAT('%', ?, '%'))
+    ORDER BY ? DESC
+    LIMIT ?,?;`;
+
+    const [storeArray] = await connection.query(query, params);
+
+    return storeArray;
+}
+
+async function selectBookmarkStore(params, connection) {
+    const query = `SELECT s.idx as storeIdx, s.logo as logo, s.title as title, avgStar, reviewNum, mgm.title as recommendation, deliveryTime, minOrderAmount, deliveryTip as tip FROM store s
+    JOIN (
+        SELECT mg.store_fk, m.title FROM menuGroup mg
+                JOIN menu m on mg.idx = m.menuGroup_fk
+                    WHERE highlight = 1
+                GROUP BY store_fk) mgm ON s.idx = mgm.store_fk
+    LEFT OUTER JOIN (
+        SELECT AVG(star) as avgStar, COUNT(*) as reviewNum, store_fk FROM review GROUP BY store_fk) rn
+                ON s.idx = rn.store_fk
+    LEFT OUTER JOIN (SELECT COUNT(*) as bookmarkNum, store_fk FROM bookmark GROUP BY store_fk) bn
+                ON s.idx = bn.store_fk
+    LEFT OUTER JOIN (SELECT store_fk, status FROM bookmark  b WHERE user_fk = ?) myBookmark
+                ON myBookmark.store_fk = s.idx
+WHERE myBookmark.status = 'Y'
+LIMIT ?,?;`;
+
+    const [storeRows] = await connection.query(query, params);
+
+    return storeRows;
+}
+
+async function toggleBookmarkStatus(params, connection) {
+    const query = `INSERT INTO bookmark (user_fk, store_fk, status) VALUES (?,?,'Y') ON DUPLICATE KEY UPDATE status = IF(status ='Y','N', 'Y');`;
+
+    const [rows] = await connection.query(query, params);
+
+    return rows.insertId;
+}
+
+async function selectBookmarkByIdx(params, connection) {
+    const query = `SELECT status, store_fk as storeIdx FROM bookmark WHERE idx=?;`;
+
+    const [bookmarkRows] = await connection.query(query, params);
+
+    return bookmarkRows;
+}
 module.exports = {
     selectStoreInfo,
     isExistStore,
@@ -183,5 +258,11 @@ module.exports = {
     selectStoreDetails,
     selectBrand,
     selectFilteredStore,
-    selectMainMenu
+    selectMainMenu,
+    selectOptionGroupByIdx,
+    selectOptionByIdx,
+    selectStoreByKeyword,
+    selectBookmarkStore,
+    toggleBookmarkStatus,
+    selectBookmarkByIdx
 };

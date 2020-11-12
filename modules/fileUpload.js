@@ -18,15 +18,35 @@ const upload = multer({
         contentType: multerS3.AUTO_CONTENT_TYPE,
         acl: "public-read",
         key: (req, file, cb) => {
-            logger.error(`File Upload Error ${file}`);
             const userIdx = req.verifiedToken.idx;
             const filename = `${userIdx}_profile`;
             cb(null, filename);
         }
     }),
+
     limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+const reviewUpload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: "baemin",
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+        acl: "public-read",
+        key: (req, file, cb) => {
+            const userIdx = req.verifiedToken.idx;
+            const directory = `reviews/`;
+            const urlEncode = encodeURI(file.originalname);
+
+            const filename =
+                directory + `${Date.now()}_${userIdx}_` + `${urlEncode}`;
+
+            cb(null, filename);
+        }
+    })
+});
+
 module.exports = {
-    upload
+    upload,
+    reviewUpload
 };

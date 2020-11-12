@@ -154,3 +154,51 @@ exports.order = async function(req, res) {
         }
     });
 };
+
+exports.getHistory = async function(req, res) {
+    const userIdx = req.verifiedToken.idx;
+    const result = [];
+
+    await tryCatch(`Get History`, async connection => {
+        const historyArray = await orderDao.selectHistory(
+            [userIdx],
+            connection
+        );
+        console.log(historyArray);
+
+        for (const item of historyArray) {
+            const menuHistoryArray = await orderDao.selectOrderMenuHistory(
+                [item.orderIdx],
+                connection
+            );
+            console.log(menuHistoryArray);
+
+            const title = menuHistoryArray[0].title
+                ? menuHistoryArray[0].title
+                : "";
+            let totalPrice = 0;
+            for (const menu of menuHistoryArray) {
+                totalPrice += menu.number * menu.price;
+            }
+
+            result.push({
+                storeIdx: item.storeIdx,
+                logo: item.logo,
+                title: item.title,
+                orderHistory: `${title} ${menuHistoryArray[0].number}개 ${
+                    menuHistoryArray.length > 1
+                        ? `외 ${menuHistoryArray.length - 1}`
+                        : ""
+                }${totalPrice}원`,
+                hashtag: item.hashtag,
+                createdAt: item.createdAt,
+                isWrite: item.isWrite ? true : false
+            });
+        }
+
+        return res.json({
+            result,
+            ...obj(true, 200)
+        });
+    });
+};

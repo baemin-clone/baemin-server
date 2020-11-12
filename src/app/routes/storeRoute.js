@@ -26,4 +26,16 @@ module.exports = function(app) {
 
     app.route("/brand").get(store.getBrand);
     app.route("/recommend").get(store.getFilteredStore);
+
+    app.route("/store-title/:storeIdx").get(jwtMiddleware, store.getStoreTitle);
+
+    app.route("/basket/menu-info").post(jwtMiddleware, store.getBasketMenu);
+
+    app.route("/search-store").get(jwtMiddleware, store.searchStore);
+    app.route("/bookmark").get(jwtMiddleware, store.getBookmarkStore);
+
+    app.route("/bookmark/:storeIdx").patch(
+        jwtMiddleware,
+        store.changeBookmarkStatus
+    );
 };
