@@ -292,7 +292,7 @@ exports.getStoreList = async function(req, res) {
                 storeIdx,
                 logo,
                 title,
-                avgStar: avgStar.toFixed(1),
+                avgStar: parseFloat(avgStar.toFixed(1)),
                 reviewNum: parseInt(reviewNum / 10) * 10 + "+",
                 recommendation,
                 deliveryTime: deliveryTime,
@@ -878,6 +878,7 @@ exports.searchStore = async function(req, res) {
 };
 
 exports.getBookmarkStore = async function(req, res) {
+    const result = [];
     const userIdx = req.verifiedToken.idx;
     let { page, size } = req.query;
 
@@ -913,8 +914,15 @@ exports.getBookmarkStore = async function(req, res) {
             connection
         );
 
+        for (const item of bookmarkStoreArray) {
+            result.push({
+                ...item,
+                avgStar: parseFloat(item.avgStar.toFixed(1))
+            });
+        }
+
         return res.json({
-            result: bookmarkStoreArray,
+            result,
             ...obj(true, 200, "찜한 가게 조회 성공")
         });
     });

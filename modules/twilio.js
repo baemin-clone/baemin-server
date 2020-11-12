@@ -98,6 +98,7 @@ function SMSMiddleware(req, res) {
     }
     const numberToString = phoneNumber.split("-").join("");
     const random = parseInt(Math.random() * 10 ** 4);
+
     sendSMS(numberToString, random);
 
     return res.json({
